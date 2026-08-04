@@ -1,0 +1,534 @@
+@import "tailwindcss";
+
+:root {
+  /* Fonts */
+  --font-geist-sans: "Geist", "Segoe UI Variable", "Segoe UI", "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
+  --font-geist-mono: "Geist Mono", "SFMono-Regular", "Consolas",
+    "Liberation Mono", "Menlo", "Courier New", monospace;
+
+  /* Backgrounds & Surfaces */
+  --background: #f3f6fb;
+  --background-subtle: #edf2fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fafd;
+  --surface-strong: #f1f4fb;
+  --surface-dark: #091225;
+  --surface-dark-elevated: #111b32;
+
+  /* Foreground / Text */
+  --foreground: #0d1838;
+  --foreground-muted: #556482;
+  --foreground-subtle: #8794b0;
+
+  /* Borders */
+  --border: #e5ebf6;
+  --border-strong: #d5def0;
+
+  /* Brand */
+  --brand: #5631d8;
+  --brand-strong: #4a2ac2;
+  --brand-soft: #ede9ff;
+  --brand-ghost: rgba(86, 49, 216, 0.12);
+
+  /* Semantic Colors */
+  --success: #16a34a;
+  --success-soft: #e8f8ee;
+  --warning: #a86a00;
+  --warning-soft: #fff5dd;
+  --danger: #ef4444;
+  --danger-soft: #feecec;
+  --info: #2563eb;
+  --info-soft: #e8f0ff;
+
+  /* Focus */
+  --focus-ring: rgba(86, 49, 216, 0.32);
+
+  /* Sidebar (Dark) */
+  --sidebar-dark-background: #070f1d;
+  --sidebar-dark-elevated: #0d1628;
+  --sidebar-dark-border: #252d40;
+  --sidebar-dark-foreground: #f8faff;
+  --sidebar-dark-muted: #c9d2ea;
+
+  /* Spacing / Layout */
+  --topbar-height: 5.5rem;
+  --sidebar-width: 13.7rem;
+  --sidebar-width-collapsed: 5.5rem;
+  --right-panel-width: 23rem;
+  --page-max-width: 110rem;
+
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.7rem;
+  --radius-lg: 0.9rem;
+  --radius-xl: 1.1rem;
+  --radius-2xl: 18px;
+
+  /* Shadows */
+  --shadow-card: 0 6px 15px rgba(16, 25, 58, 0.03),
+    0 1px 4px rgba(16, 25, 58, 0.015);
+  --shadow-card-strong: 0 22px 60px rgba(16, 25, 58, 0.1),
+    0 6px 20px rgba(16, 25, 58, 0.04);
+  --shadow-card-hover: 0 18px 42px rgba(16, 25, 58, 0.08),
+    0 4px 14px rgba(16, 25, 58, 0.035);
+  --shadow-focus: 0 0 0 4px var(--focus-ring);
+
+  /* Font Sizes */
+  --font-size-display: clamp(2rem, 1.6rem + 1vw, 2.75rem);
+  --font-size-page-title: clamp(2.05rem, 1.65rem + 0.95vw, 2.8rem);
+  --font-size-section-title: 1.2rem;
+  --font-size-label: 0.875rem;
+
+  /* Custom spacing */
+  --space-18: 4.5rem;
+
+  /* DAR Legacy tokens */
+  --dar-gradient: linear-gradient(180deg, #7443ff 0%, #5631d8 100%);
+  --color-dar-bg: #fbfbff;
+  --color-dar-card: #ffffff;
+  --color-dar-border-legacy: #e7eaf2;
+  --color-dar-primary-2: #7443ff;
+  --color-dar-navy: #070b2d;
+  --color-dar-muted: #64708f;
+  --color-dar-sidebar-muted: #30395f;
+  --color-dar-dark: #020a1d;
+  --color-dar-success: #12864c;
+  --color-dar-warning: #d88912;
+  --color-dar-error: #e11d48;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-background-subtle: var(--background-subtle);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-strong: var(--surface-strong);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-elevated: var(--surface-dark-elevated);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* DAR legacy tokens for backward compatibility */
+  --color-dar-primary: #5631d8;
+  --color-dar-primary-soft: #ede9ff;
+  --color-dar-bg: #fbfbff;
+  --color-dar-card: #ffffff;
+  --color-dar-border: #e7eaf2;
+  --color-dar-navy: #070b2d;
+  --color-dar-muted: #64708f;
+  --color-dar-sidebar-muted: #30395f;
+  --color-dar-dark: #020a1d;
+  --color-dar-success: #12864c;
+  --color-dar-warning: #d88912;
+  --color-dar-error: #e11d48;
+  --color-dar-info: #2563eb;
+}
+
+/* Reset & Base */
+*,
+*::before,
+*::after {
+  border-color: var(--border);
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+::selection {
+  background: rgba(86, 49, 216, 0.18);
+  color: var(--foreground);
+}
+
+:focus-visible {
+  outline: none;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+[role="button"],
+[role="tab"],
+[role="checkbox"] {
+  transition: color 180ms ease, background-color 180ms ease,
+    border-color 180ms ease, box-shadow 220ms ease, transform 180ms ease,
+    opacity 180ms ease;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="checkbox"]:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--foreground-subtle);
+}
+
+/* DAR Utility classes */
+.dar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 148, 174, 0.45) transparent;
+}
+
+.dar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(138, 148, 174, 0.35);
+  border-radius: 999px;
+}
+
+.dar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dar-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.dar-surface-dark {
+  background: var(--surface-dark);
+  color: var(--sidebar-dark-foreground);
+}
+
+.dar-card-radius {
+  border-radius: var(--radius-xl);
+}
+
+.dar-page-gradient {
+  background-image: radial-gradient(
+      circle at top left,
+      rgba(86, 49, 216, 0.085),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(37, 99, 235, 0.045),
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.82),
+      rgba(243, 246, 251, 0.98)
+    );
+}
+
+.dar-panel-surface {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(248, 250, 253, 0.98)
+  );
+}
+
+.dar-soft-surface {
+  background: linear-gradient(180deg, #ffffff, #fbfcff);
+}
+
+.dar-nested-surface {
+  background: linear-gradient(180deg, #fafcff, #f5f8fd);
+}
+
+/* DAR Logo classes (from Omar) */
+.dar-logo-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dar-logo-image {
+  display: block;
+  height: auto;
+  max-width: none;
+  transform: scale(1.95);
+  transform-origin: center;
+}
+
+.dar-logo-image-light {
+  filter: brightness(0) saturate(100%) invert(7%) sepia(22%) saturate(1681%)
+    hue-rotate(184deg) brightness(92%) contrast(96%);
+}
+
+.dar-logo-image-dark {
+  filter: drop-shadow(0 8px 18px rgba(2, 6, 23, 0.26));
+}
+
+/* Auth responsive tweaks (from Omar/Menna) */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .auth-content-panel {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .auth-hero-panel {
+    padding: 1.75rem;
+  }
+
+  .auth-hero-panel [class*="mt-[82px]"] {
+    margin-top: 3rem;
+  }
+
+  .auth-hero-panel [class*="mt-[58px]"],
+  .auth-hero-panel [class*="mt-[54px]"] {
+    margin-top: 2.25rem;
+  }
+
+  .auth-hero-panel [class*="mt-[38px]"],
+  .auth-hero-panel [class*="mt-[36px]"] {
+    margin-top: 1.5rem;
+  }
+
+  .auth-hero-panel
+    [class*="space-y-[32px]"]
+    > :not([hidden])
+    ~ :not([hidden]),
+  .auth-hero-panel
+    [class*="space-y-[30px]"]
+    > :not([hidden])
+    ~ :not([hidden]) {
+    margin-top: 1.25rem;
+  }
+
+  .auth-top-action {
+    top: 1.25rem;
+  }
+
+  .auth-card-login {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .auth-card-signup {
+    padding-top: 1.375rem;
+    padding-bottom: 1.375rem;
+  }
+
+  .auth-card-verify {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .auth-card-reset {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .auth-card-forgot {
+    padding-top: 1.375rem;
+    padding-bottom: 1.375rem;
+  }
+
+  .auth-card-header {
+    margin-bottom: 1rem;
+  }
+
+  .auth-segmented-wrap {
+    margin-bottom: 1rem;
+  }
+
+  .auth-security-card-wrap {
+    margin-top: 1.25rem;
+  }
+
+  .auth-card-signup form > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.875rem;
+  }
+
+  .auth-card-verify header {
+    margin-top: 0.75rem;
+  }
+
+  .auth-card-verify > div,
+  .auth-card-verify > footer,
+  .auth-card-verify > button {
+    margin-top: 1.25rem;
+  }
+
+  .auth-card-reset > div,
+  .auth-card-reset > form,
+  .auth-card-reset > header {
+    margin-bottom: 1.25rem;
+  }
+
+  .auth-forgot-flow {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .auth-forgot-flow > div:last-child {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .auth-create-account-screen {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   Owner Portal — Design System (from Renad/Omar)
+   ═══════════════════════════════════════════════ */
+
+/* Layout */
+.owner-dashboard-frame {
+  display: flex;
+  min-height: 100vh;
+}
+
+.owner-dashboard-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f7f8fb;
+}
+
+.owner-dashboard-content {
+  flex: 1;
+  padding-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .owner-dashboard-frame {
+    flex-direction: column;
+  }
+}
+
+/* Typography */
+.owner-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0d1735;
+  letter-spacing: -0.02em;
+}
+
+.owner-page-description {
+  font-size: 0.938rem;
+  line-height: 1.5;
+  color: #59637d;
+}
+
+.owner-section-title {
+  font-size: 1.063rem;
+  font-weight: 600;
+  color: #0d1735;
+}
+
+.owner-card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0d1735;
+}
+
+.owner-label {
+  font-size: 0.813rem;
+  font-weight: 500;
+  color: #17213d;
+}
+
+.owner-helper {
+  font-size: 0.813rem;
+  line-height: 1.4;
+  color: #59637d;
+}
+
+.owner-body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #17213d;
+}
+
+/* Numbers */
+.owner-number-md {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0d1735;
+}
+
+.owner-number-sm {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0d1735;
+}
+
+.owner-number-lg {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #0d1735;
+}
+
+/* Badge */
+.owner-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Input */
+.owner-input-text {
+  font-size: 0.875rem;
+  color: #17213d;
+  background: #ffffff;
+}
+
+.owner-input-text::placeholder {
+  color: #8794b0;
+}
+
+/* Button text */
+.owner-button-text {
+  font-size: 0.813rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Legacy */
+.dar-owner-dashboard {
+  display: contents;
+}

@@ -1,0 +1,5 @@
+import Image from "next/image";
+import {Icon} from "@/components/host-landing/icons";
+import {ReferenceBookingPanel as BookingPanel} from "./reference-calendar";
+
+export function ReferenceBookingPanel(){return <aside className="space-y-[10px]"><section className="flex min-h-[112px] rounded-[8px] border border-[#e3e7ef] bg-white p-[9px] shadow-[0_3px_12px_rgba(31,38,72,.025)]"><Image src="/property-studio-reference.png" alt="Luxury Studio in Madinaty" width={138} height={96} className="h-[94px] w-[126px] shrink-0 rounded-[6px] object-cover"/><div className="ml-[11px] min-w-0 flex-1 py-[3px]"><h2 className="owner-section-title truncate">Luxury Studio in Madinaty</h2><p className="owner-body mt-[6px] flex items-center gap-[5px]"><Icon name="location" className="size-[11px]"/>B6, Madinaty, Cairo</p><p className="owner-body mt-[11px]">Occupancy (May)</p><strong className="owner-number-md mt-[1px] block">76%</strong><div className="mt-[3px] h-[5px] w-full overflow-hidden rounded-full bg-[#e7e9ef]"><i className="block h-full w-[76%] rounded-full bg-[#6033dd]"/></div></div></section><BookingPanel/></aside>}

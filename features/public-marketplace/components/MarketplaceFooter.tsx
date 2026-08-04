@@ -1,0 +1,109 @@
+import Image from "next/image";
+import Link from "next/link";
+
+const footerColumns = [
+  {
+    links: [
+      { href: "/search", label: "Stays" },
+      { href: "/favorites", label: "Favorites" },
+      { href: "/search?type=hotels", label: "Hotels" },
+      { href: "/search?destination=Madinaty", label: "Destinations" },
+      { href: "/search?view=map", label: "Map search" },
+    ],
+    title: "Explore",
+  },
+  {
+    links: [
+      { href: "/become-a-host", label: "Become a host" },
+      { href: "/about", label: "About us" },
+      { href: "/help", label: "Help" },
+      { href: "/contact", label: "Contact" },
+    ],
+    title: "Company",
+  },
+  {
+    links: [
+      { href: "/legal", label: "Legal center" },
+      { href: "/legal/terms", label: "Terms" },
+      { href: "/legal/privacy", label: "Privacy" },
+      { href: "/legal/cancellation", label: "Cancellation" },
+    ],
+    title: "Legal",
+  },
+  {
+    links: [
+      { href: "/login", label: "Sign in" },
+      { href: "/sign-up", label: "Create account" },
+      { href: "/forgot-password", label: "Reset password" },
+      { href: "/verify-email", label: "Verify email" },
+    ],
+    title: "Account",
+  },
+];
+
+const socials = [
+  { href: "/contact", label: "Facebook", text: "f" },
+  { href: "/contact", label: "Instagram", text: "ig" },
+  { href: "/contact", label: "X", text: "x" },
+  { href: "/contact", label: "LinkedIn", text: "in" },
+];
+
+export function MarketplaceFooter() {
+  return (
+    <footer className="bg-white px-5 pb-5 pt-9 sm:px-8 lg:px-12 xl:px-8 2xl:px-9">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-2xl bg-[#06111F] text-white shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
+        <div className="grid gap-9 px-7 py-9 sm:px-10 lg:grid-cols-[1.2fr_repeat(4,1fr)] lg:px-10 xl:gap-6 xl:px-8 xl:py-8">
+          <div>
+            <Link aria-label="DAR home" className="dar-logo-frame inline-flex h-[56px] w-[156px]" href="/">
+              <Image
+                alt="DAR logo"
+                className="dar-logo-image dar-logo-image-dark w-[152px] object-contain"
+                height={864}
+                src="/assets/images/dar-logo.png"
+                width={1536}
+              />
+            </Link>
+            <p className="mt-5 max-w-[250px] text-[13px] leading-6 text-white/72">
+              Premium stays in Egypt. Studios, apartments and hotels in the best locations.
+            </p>
+            <div className="mt-5 flex gap-2">
+              {socials.map((social) => (
+                <Link
+                  aria-label={`DAR on ${social.label}`}
+                  className="flex size-8 items-center justify-center rounded-full text-[13px] font-bold text-white/82 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  href={social.href}
+                  key={social.label}
+                >
+                  {social.text}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {footerColumns.map((column) => (
+            <div key={column.title}>
+              <h2 className="text-[14px] font-bold text-white">{column.title}</h2>
+              <ul className="mt-5 space-y-3">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      className="text-[13px] text-white/70 transition hover:text-white focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                      href={link.href}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-white/10 px-7 py-5 text-[12px] text-white/62 sm:flex-row sm:items-center sm:justify-between sm:px-10 xl:px-8">
+          <span>© {new Date().getFullYear()} DAR. All rights reserved.</span>
+          <span>Built for verified stays in Egypt.</span>
+        </div>
+      </div>
+    </footer>
+  );
+}

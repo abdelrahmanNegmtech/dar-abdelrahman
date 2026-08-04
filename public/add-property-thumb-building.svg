@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="200" viewBox="0 0 280 200">
+  <rect width="280" height="200" fill="#f3f4f6" rx="8"/>
+  <g transform="translate(90,40)">
+    <rect x="10" y="30" width="80" height="80" rx="2" fill="#d1d5db"/>
+    <rect x="20" y="40" width="20" height="20" rx="2" fill="#9ca3af"/>
+    <rect x="60" y="40" width="20" height="20" rx="2" fill="#9ca3af"/>
+    <rect x="20" y="70" width="20" height="20" rx="2" fill="#9ca3af"/>
+    <rect x="60" y="70" width="20" height="20" rx="2" fill="#9ca3af"/>
+    <rect x="40" y="100" width="20" height="10" rx="1" fill="#9ca3af"/>
+    <polygon points="0,40 50,0 100,40" fill="#e5e7eb"/>
+  </g>
+  <text x="140" y="160" text-anchor="middle" fill="#6b7280" font-size="14" font-family="system-ui">Building</text>
+</svg>

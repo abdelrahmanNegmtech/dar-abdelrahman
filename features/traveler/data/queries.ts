@@ -1,0 +1,332 @@
+import { redirect } from "next/navigation";
+import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
+import { getSupabaseConfig } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/server";
+import type {
+  BookingStatus,
+  SupportTicket,
+  TravelerData,
+  TravelerProfile,
+  TravelerReview,
+} from "../types";
+import { summarizeNotifications } from "../utils";
+import { devProfile, devTravelerData } from "./devData";
+import { getDevStore } from "./devStore";
+
+type SupabaseProfileRow = Record<string, unknown>;
+
+const devAuthBypassTravelerProfile: TravelerProfile = {
+  ...devProfile,
+  activity: devProfile.activity,
+  avatarUrl: DEV_AUTH_BYPASS_USER.avatarUrl,
+  displayName: DEV_AUTH_BYPASS_USER.fullName.split(" ")[0],
+  email: DEV_AUTH_BYPASS_USER.email,
+  emailVerified: true,
+  fullName: DEV_AUTH_BYPASS_USER.fullName,
+  id: DEV_AUTH_BYPASS_USER.id,
+  identityVerified: false,
+  phoneVerified: true,
+  role: DEV_AUTH_BYPASS_USER.role,
+};
+
+let travelerStoreSelectionLogged = false;
+
+function cloneTravelerData(data: TravelerData): TravelerData {
+  return JSON.parse(JSON.stringify(data)) as TravelerData;
+}
+
+function getTravelerStoreData(): TravelerData {
+  if (isDevAuthBypassEnabled()) {
+    if (!travelerStoreSelectionLogged) {
+      console.info("[traveler:data] using development file-backed store");
+      travelerStoreSelectionLogged = true;
+    }
+    return getDevStore();
+  }
+
+  if (!travelerStoreSelectionLogged) {
+    console.info("[traveler:data] using production read-only seed store; filesystem persistence disabled");
+    travelerStoreSelectionLogged = true;
+  }
+  return cloneTravelerData(devTravelerData);
+}
+
+function readString(row: SupabaseProfileRow, key: string, fallback: string) {
+  const value = row[key];
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+function readNumber(row: SupabaseProfileRow, key: string, fallback: number) {
+  const value = row[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function mapProfile(row: SupabaseProfileRow | null | undefined, fallback: TravelerProfile): TravelerProfile {
+  if (!row) {
+    return fallback;
+  }
+
+  const accountType: TravelerProfile["accountType"] =
+    readString(row, "account_type", fallback.accountType) === "owner" ? "owner" : "guest";
+
+  return {
+    ...fallback,
+    accountType,
+    activity: fallback.activity,
+    address: readString(row, "address", fallback.address),
+    avatarUrl: readString(row, "avatar_url", fallback.avatarUrl),
+    city: readString(row, "city", fallback.city),
+    completion: readNumber(row, "profile_completion", fallback.completion),
+    country: readString(row, "country", fallback.country),
+    dateOfBirth: readString(row, "date_of_birth", fallback.dateOfBirth),
+    displayName: readString(row, "display_name", fallback.displayName),
+    email: readString(row, "email", fallback.email),
+    emailVerified: readString(row, "email_verified", String(fallback.emailVerified)) === "true",
+    emergencyContactName: readString(row, "emergency_contact_name", fallback.emergencyContactName),
+    emergencyContactPhone: readString(row, "emergency_contact_phone", fallback.emergencyContactPhone),
+    fullName: readString(row, "full_name", fallback.fullName),
+    id: readString(row, "id", fallback.id),
+    identityVerified: readString(row, "identity_verified", String(fallback.identityVerified)) === "true",
+    nationality: readString(row, "nationality", fallback.nationality),
+    phone: readString(row, "phone", fallback.phone),
+    phoneVerified: readString(row, "phone_verified", String(fallback.phoneVerified)) === "true",
+    preferredCurrency: readString(row, "preferred_currency", fallback.preferredCurrency),
+    preferredLanguage: readString(row, "preferred_language", fallback.preferredLanguage),
+  };
+}
+
+async function getAuthenticatedProfile() {
+  if (isDevAuthBypassEnabled()) {
+    // TEMPORARY LOCAL DEVELOPMENT PREVIEW BYPASS: supplies the mock traveler to
+    // every Traveler Dashboard page while local route protection is bypassed.
+    return {
+      profile: devAuthBypassTravelerProfile,
+      userId: devAuthBypassTravelerProfile.id,
+      usingFallback: true,
+    };
+  }
+
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return { profile: devProfile, userId: devProfile.id, usingFallback: true };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?redirectTo=/traveler/dashboard");
+  }
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle<SupabaseProfileRow>();
+
+  return {
+    profile: mapProfile(data, { ...devProfile, email: user.email ?? devProfile.email, id: user.id }),
+    userId: user.id,
+    usingFallback: false,
+  };
+}
+
+export async function getTravelerData(): Promise<TravelerData> {
+  const { profile } = await getAuthenticatedProfile();
+  const data = getTravelerStoreData();
+
+  return {
+    ...data,
+    profile,
+  };
+}
+
+export async function getTravelerShellData() {
+  const data = await getTravelerData();
+  return {
+    notificationsUnread: data.notifications.filter((notification) => !notification.isRead).length,
+    profile: data.profile,
+    unreadMessages: data.conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+  };
+}
+
+export async function getDashboardData() {
+  const data = await getTravelerData();
+  const upcomingBookings = data.bookings.filter((booking) => booking.status === "confirmed" || booking.status === "pending");
+  const completedBookings = data.bookings.filter((booking) => booking.status === "completed");
+  const upcomingStay = upcomingBookings[0] ?? null;
+
+  return {
+    completedBookings,
+    notificationsUnread: data.notifications.filter((notification) => !notification.isRead).length,
+    paymentBalance: data.wallet.balance,
+    profile: data.profile,
+    recommendedProperties: data.properties.filter((property) => property.status === "published").slice(0, 4),
+    reviewsCount: data.reviews.filter((review) => review.status === "submitted").length,
+    savedCount: data.properties.filter((property) => property.isSaved).length,
+    trips: upcomingBookings.concat(completedBookings).slice(0, 4),
+    upcomingStay,
+    upcomingStaysCount: upcomingBookings.length,
+  };
+}
+
+export async function getBookingsData(status?: BookingStatus | "upcoming" | "past") {
+  const data = await getTravelerData();
+  const requestedStatus = status ?? "upcoming";
+  const bookings = data.bookings.filter((booking) => {
+    if (requestedStatus === "upcoming") return booking.status === "confirmed" || booking.status === "pending";
+    if (requestedStatus === "past") return booking.status === "completed";
+    return booking.status === requestedStatus;
+  });
+
+  return {
+    bookings,
+    stats: {
+      pendingPayments: data.bookings.filter((booking) => booking.paymentStatus === "pending").length,
+      totalNights: data.bookings.reduce((total, booking) => total + booking.nightsCount, 0),
+      totalPaid: data.bookings
+        .filter((booking) => booking.paymentStatus === "paid")
+        .reduce((total, booking) => total + booking.totalAmount, 0),
+      upcoming: data.bookings.filter((booking) => booking.status === "confirmed" || booking.status === "pending").length,
+    },
+  };
+}
+
+export async function getBookingDetailsData(bookingId: string) {
+  const data = await getTravelerData();
+  return data.bookings.find((booking) => booking.id === bookingId || booking.reference === bookingId) ?? null;
+}
+
+export async function getSavedPropertiesData() {
+  const data = await getTravelerData();
+  return {
+    properties: data.properties.filter((property) => property.isSaved),
+  };
+}
+
+export async function getMessagesData(selectedConversationId?: string) {
+  const data = await getTravelerData();
+  const selectedConversation =
+    data.conversations.find((conversation) => conversation.id === selectedConversationId) ?? data.conversations[0] ?? null;
+
+  return {
+    conversations: data.conversations,
+    selectedConversation,
+  };
+}
+
+export async function getNotificationsData(type?: string) {
+  const data = await getTravelerData();
+  const notifications = type && type !== "all"
+    ? data.notifications.filter((notification) => notification.type === type || (type === "unread" && !notification.isRead))
+    : data.notifications;
+
+  return {
+    notifications,
+    stats: summarizeNotifications(data.notifications),
+  };
+}
+
+export async function getReviewsData() {
+  const data = await getTravelerData();
+
+  // Reviews the traveler has already submitted
+  const submitted = data.reviews.filter((review) => review.status === "submitted");
+
+  // Completed bookings that do NOT have a submitted review yet -> pending
+  const submittedBookingIds = new Set(submitted.map((r) => r.bookingId));
+  const explicitPending = data.reviews.filter((review) => review.status === "pending");
+  const pendingBookingIds = new Set(explicitPending.map((review) => review.bookingId));
+  const pending = data.bookings
+    .filter((b) => b.status === "completed" && !submittedBookingIds.has(b.id))
+    .filter((b) => !pendingBookingIds.has(b.id))
+    .map(
+      (booking): TravelerReview => ({
+        accuracyRating: 0,
+        bookingId: booking.id,
+        cleanlinessRating: 0,
+        comment: "",
+        communicationRating: 0,
+        createdAt: booking.checkOut,
+        hostName: booking.owner.name,
+        id: `pending-${booking.id}`,
+        locationRating: 0,
+        property: booking.property,
+        rating: 0,
+        status: "pending" as const,
+        travelerAvatarUrl: data.profile.avatarUrl,
+        travelerName: data.profile.fullName,
+        valueRating: 0,
+      }),
+    );
+
+  const allPending = [...explicitPending, ...pending];
+
+  return {
+    pending: allPending,
+    reviews: [...allPending, ...submitted],
+    submitted,
+  };
+}
+
+export async function getPaymentsData() {
+  const data = await getTravelerData();
+  return {
+    bookings: data.bookings,
+    methods: data.paymentMethods,
+    transactions: data.transactions,
+    wallet: data.wallet,
+  };
+}
+
+export async function getProfileData() {
+  const data = await getTravelerData();
+  const profile = data.profile;
+
+  // Calculate dynamic completion
+  const checks = [
+    profile.fullName.trim().length >= 2,
+    profile.avatarUrl.length > 0,
+    profile.emailVerified,
+    profile.phoneVerified,
+    profile.dateOfBirth.length > 0,
+    profile.address.trim().length > 0 && profile.city.trim().length > 0 && profile.country.trim().length > 0,
+    profile.emergencyContactName.trim().length > 0 && profile.emergencyContactPhone.trim().length > 0,
+    profile.identityVerified,
+  ];
+  const completed = checks.filter(Boolean).length;
+  const completion = Math.round((completed / checks.length) * 100);
+
+  return {
+    activity: profile.activity,
+    completion,
+    completionChecks: checks,
+    methods: data.paymentMethods,
+    profile: { ...profile, completion },
+    settings: data.settings,
+  };
+}
+
+export async function getSettingsData() {
+  const data = await getTravelerData();
+  return {
+    profile: data.profile,
+    settings: data.settings,
+  };
+}
+
+export async function getSupportData() {
+  const data = await getTravelerData();
+  return {
+    bookings: data.bookings,
+    tickets: data.tickets,
+  };
+}
+
+export async function getSupportTicketData(ticketId: string): Promise<SupportTicket | null> {
+  const data = await getTravelerData();
+  return data.tickets.find((ticket) => ticket.id === ticketId || ticket.reference === ticketId) ?? null;
+}

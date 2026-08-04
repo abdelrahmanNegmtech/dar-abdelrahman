@@ -1,0 +1,19 @@
+import { Suspense } from "react";
+import { BookingsPage } from "@/features/traveler/components/BookingsPage";
+import { getBookingsData, getTravelerData } from "@/features/traveler/data/queries";
+
+export default async function TravelerBookingsRoute({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const params = await searchParams;
+  const tab = params.tab === "past" || params.tab === "cancelled" ? params.tab : "upcoming";
+  const [{ stats }, data] = await Promise.all([getBookingsData(tab), getTravelerData()]);
+
+  return (
+    <Suspense fallback={null}>
+      <BookingsPage bookings={data.bookings} initialTab={tab} stats={stats} />
+    </Suspense>
+  );
+}
