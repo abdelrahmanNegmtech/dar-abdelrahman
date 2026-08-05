@@ -3,5 +3,5 @@ export default function OwnerDashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <>{children}</>;
+  return <div className="dar-owner-dashboard contents">{children}</div>;
 }

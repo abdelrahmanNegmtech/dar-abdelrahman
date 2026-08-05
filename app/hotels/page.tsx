@@ -70,7 +70,7 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {hotelListings.map((hotel) => {
+            {hotelListings.map((hotel, index) => {
               const lowestRoom = hotel.rooms.filter((room) => room.available).sort((a, b) => a.pricePerNight - b.pricePerNight)[0] ?? hotel.rooms[0];
               return (
                 <Link
@@ -79,7 +79,7 @@ export default async function HotelsPage({ searchParams }: HotelsPageProps) {
                   className="group overflow-hidden rounded-[14px] border border-[#E0E5EF] bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_22px_48px_rgba(15,23,42,0.1)]"
                 >
                   <div className="relative h-64 overflow-hidden bg-slate-100">
-                    <Image src={hotel.image} alt={hotel.title} fill sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" />
+                    <Image src={hotel.image} alt={hotel.title} fill sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw" loading={index === 0 ? "eager" : "lazy"} className="object-cover transition duration-500 group-hover:scale-105" />
                     <span className="absolute left-4 top-4 rounded-[8px] bg-[#5F36E9] px-3 py-1.5 text-[12px] font-bold text-white shadow-lg shadow-[#5F36E9]/25">
                       Hotel
                     </span>

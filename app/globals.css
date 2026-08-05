@@ -409,123 +409,132 @@ textarea::placeholder {
 }
 
 /* ═══════════════════════════════════════════════
-   Owner Portal — Design System (from Renad/Omar)
+   Owner Portal — Design System (from Renad)
    ═══════════════════════════════════════════════ */
 
 /* Layout */
 .owner-dashboard-frame {
+  margin-inline: auto;
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: none;
+  background-color: #ffffff;
+}
+
+.owner-dashboard-frame > aside {
+  width: 230px !important;
 }
 
 .owner-dashboard-main {
-  flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  background: #f7f8fb;
+  flex: 1;
 }
 
 .owner-dashboard-content {
-  flex: 1;
+  width: 100%;
+  max-width: none;
+  padding-left: 2rem;
+  padding-right: 2rem;
   padding-bottom: 2rem;
+  padding-top: 1.25rem;
 }
 
-@media (max-width: 900px) {
-  .owner-dashboard-frame {
-    flex-direction: column;
+.owner-dashboard-section-gap {
+  margin-top: 1.25rem;
+}
+
+.owner-dashboard-card-gap {
+  gap: 1rem;
+}
+
+@media (max-width: 700px) {
+  .owner-dashboard-content {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-bottom: 1.25rem;
+    padding-top: 1rem;
   }
 }
 
 /* Typography */
 .owner-page-title {
-  font-size: 1.5rem;
+  font-size: 26px;
+  line-height: 34px;
   font-weight: 700;
-  line-height: 1.2;
-  color: #0d1735;
-  letter-spacing: -0.02em;
 }
 
 .owner-page-description {
-  font-size: 0.938rem;
-  line-height: 1.5;
-  color: #59637d;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
 }
 
 .owner-section-title {
-  font-size: 1.063rem;
+  font-size: 18px;
+  line-height: 26px;
   font-weight: 600;
-  color: #0d1735;
 }
 
 .owner-card-title {
-  font-size: 0.875rem;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 600;
-  color: #0d1735;
-}
-
-.owner-label {
-  font-size: 0.813rem;
-  font-weight: 500;
-  color: #17213d;
-}
-
-.owner-helper {
-  font-size: 0.813rem;
-  line-height: 1.4;
-  color: #59637d;
 }
 
 .owner-body {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: #17213d;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.owner-label {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.owner-input-text {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.owner-button-text {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+}
+
+.owner-badge {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.owner-helper {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
 }
 
 /* Numbers */
-.owner-number-md {
-  font-size: 1.5rem;
+.owner-number-lg {
+  font-size: 26px;
+  line-height: 34px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #0d1735;
+}
+
+.owner-number-md {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
 }
 
 .owner-number-sm {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0d1735;
-}
-
-.owner-number-lg {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: #0d1735;
-}
-
-/* Badge */
-.owner-badge {
-  font-size: 0.75rem;
+  font-size: 16px;
+  line-height: 24px;
   font-weight: 600;
-  line-height: 1;
-}
-
-/* Input */
-.owner-input-text {
-  font-size: 0.875rem;
-  color: #17213d;
-  background: #ffffff;
-}
-
-.owner-input-text::placeholder {
-  color: #8794b0;
-}
-
-/* Button text */
-.owner-button-text {
-  font-size: 0.813rem;
-  font-weight: 600;
-  line-height: 1;
 }
 
 /* Legacy */

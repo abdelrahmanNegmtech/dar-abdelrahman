@@ -1,6 +1,21 @@
 // Shared mock data for DAR owner portal
 // TODO: Replace with real API data when backend is connected
 
+export const owners = {
+  "ahmed-hassan": {
+    id: "ahmed-hassan",
+    name: "Ahmed Hassan",
+    title: "Owner & Broker in Cairo",
+    bio: "Helping guests find trusted furnished stays in Madinaty, New Capital and Cairo East.",
+    image: "/owner-selfie-ahmed-reference.png",
+    rating: "4.8",
+    reviews: 126,
+    years: 3,
+    responseRate: "97%",
+    responseTime: "18 min",
+  },
+};
+
 export const properties = [
   {
     id: "1",

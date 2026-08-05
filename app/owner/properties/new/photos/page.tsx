@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/host-landing/icons";
 import { DarLogo } from "@/components/brand/dar-logo";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
+import { ownerRoutes } from "@/lib/owner-routes";
 
 type Photo = {
   src: string;
@@ -58,6 +60,7 @@ export default function PhotoUploaderPage() {
       return defaultPhotos;
     }
   });
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!window.localStorage.getItem(storageKey)) {
@@ -71,15 +74,27 @@ export default function PhotoUploaderPage() {
     window.localStorage.setItem(storageKey, JSON.stringify(nextPhotos));
   }
 
-  function saveAndContinue() {
+  function saveAndContinue(draft = false) {
     persist();
-    router.push("/owner/properties/publish");
+    window.localStorage.setItem("dar-owner-property-status:1", draft ? "draft" : "editing");
+    router.push(ownerRoutes.propertyEdit("1", "photos"));
   }
 
   function removePhoto(index: number) {
+    if (!window.confirm("Delete this photo?")) return;
     const next = photos.filter((_, photoIndex) => photoIndex !== index);
     setPhotos(next);
     persist(next);
+  }
+
+  function reorderPhoto(toIndex: number) {
+    if (dragIndex === null || dragIndex === toIndex) return;
+    const next = [...photos];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(toIndex, 0, moved);
+    setPhotos(next);
+    persist(next);
+    setDragIndex(null);
   }
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -120,10 +135,10 @@ export default function PhotoUploaderPage() {
                 <TipsCard variant="desktop" />
               </div>
               <TipsCard variant="mobile" />
-              <PhotoGrid photos={photos} onRemove={removePhoto} onAdd={() => inputRef.current?.click()} />
-              <DesktopActions onSave={saveAndContinue} />
+              <PhotoGrid photos={photos} onRemove={removePhoto} onAdd={() => inputRef.current?.click()} onDragStart={setDragIndex} onDrop={reorderPhoto} />
+              <DesktopActions onSave={() => saveAndContinue(false)} onDraft={() => saveAndContinue(true)} />
             </div>
-            <MobileActions onSave={saveAndContinue} />
+            <MobileActions onSave={() => saveAndContinue(false)} onDraft={() => saveAndContinue(true)} />
           </div>
         </section>
       </div>
@@ -140,7 +155,7 @@ function DesktopSidebar() {
       <nav className="mt-[48px] space-y-[9px]">
         {navItems.map(([item, icon]) => (
           <Link
-            href={item === "Bookings" ? "/owner/bookings/request-decision" : item === "Properties" ? "/owner/properties/new/photos" : "#"}
+            href={item === "Dashboard" ? ownerRoutes.dashboard : item === "Bookings" ? ownerRoutes.bookings : item === "Properties" ? ownerRoutes.properties : item === "Calendar" ? ownerRoutes.calendar("1") : item === "Messages" ? ownerRoutes.messages : item === "Reviews" ? ownerRoutes.reviews : item === "Payouts" ? ownerRoutes.payouts : item === "Settings" ? ownerRoutes.settings : ownerRoutes.dashboard}
             key={item}
             className={`owner-button-text flex h-12 items-center gap-[13px] rounded-lg px-4 ${item === "Properties" ? "bg-[#f4efff] text-[#6c3bff]" : "text-[#6f7896] hover:bg-[#f8f7ff]"}`}
           >
@@ -151,14 +166,14 @@ function DesktopSidebar() {
       </nav>
       <div className="mt-auto space-y-4">
         <button className="owner-button-text flex h-[58px] w-full items-center gap-3 rounded-lg border border-[#e5e9f2] px-4 text-left">
-          <Image src="/dashboard-avatar-omar.png" alt="" width={34} height={34} className="size-[34px] rounded-full object-cover" />
+          <ProfileAvatar src="/owner-selfie-ahmed-reference.png" name="Ahmed Hassan" size={34}/>
           <span className="owner-body min-w-0 flex-1">
             <span className="owner-body block">Ahmed Hassan</span>
             <span className="owner-body block">Host</span>
           </span>
           <Icon name="chevron" className="size-4" />
         </button>
-        <Link href="#" className="owner-button-text flex h-[48px] items-center gap-3 rounded-lg border border-[#e5e9f2] px-4">
+        <Link href={ownerRoutes.help} className="owner-button-text flex h-[48px] items-center gap-3 rounded-lg border border-[#e5e9f2] px-4">
           <span className="owner-body grid size-5 place-items-center rounded-full border border-[#8790aa]">?</span>
           Help Center
         </Link>
@@ -236,10 +251,10 @@ function DesktopTopBar() {
         <span className="owner-body">Photos</span>
       </div>
       <div className="flex items-center gap-4">
-        <button className="owner-button-text flex h-10 items-center gap-2 rounded-lg border border-[#e3e8f2] px-4"><Icon name="message" className="size-4" />Preview listing <Icon name="arrow-right" className="size-4 -rotate-45" /></button>
+        <Link href={ownerRoutes.propertyPublish("1")} className="owner-button-text flex h-10 items-center gap-2 rounded-lg border border-[#e3e8f2] px-4"><Icon name="message" className="size-4" />Preview listing <Icon name="arrow-right" className="size-4 -rotate-45" /></Link>
         <button className="owner-button-text grid size-10 place-items-center rounded-lg border border-[#e3e8f2]"><span className="owner-body">...</span></button>
         <button className="owner-button-text flex h-10 items-center gap-3">
-          <Image src="/dashboard-avatar-omar.png" alt="" width={34} height={34} className="size-[34px] rounded-full object-cover" />
+          <ProfileAvatar src="/owner-selfie-ahmed-reference.png" name="Ahmed Hassan" size={34}/>
           Ahmed Hassan <Icon name="chevron" className="size-4" />
         </button>
       </div>
@@ -271,7 +286,7 @@ function Header({ progress, count }: { progress: number; count: number }) {
         <p className="owner-body shrink-0">{count}/20 photos</p>
       </div>
       <div className="mt-3 h-1.5 rounded-full bg-[#edf0f6]">
-        <div className="h-full rounded-full bg-[var(--brand)]" style={{ width: `${progress}%` }} />
+        <div className="h-full rounded-full bg-[#5b2be0]" style={{ width: `${progress}%` }} />
       </div>
     </section>
   );
@@ -283,7 +298,7 @@ function UploadBox({ onChoose }: { onChoose: () => void }) {
       <span className="owner-badge grid size-[66px] place-items-center rounded-full bg-[#eee8ff] max-[760px]:size-[52px]"><Icon name="cloud-upload" className="size-9 max-[760px]:size-7" /></span>
       <span className="owner-body mt-7 block max-[760px]:mt-5">Drag and drop photos here</span>
       <span className="owner-body mt-2 block">or</span>
-      <span className="owner-badge mt-4 grid h-[48px] min-w-[166px] place-items-center rounded-lg bg-[var(--brand)] px-8 text-white shadow-[0_12px_24px_rgba(91,43,224,0.22)] max-[760px]:h-10 max-[760px]:min-w-[136px]">Choose photos</span>
+      <span className="owner-badge mt-4 grid h-[48px] min-w-[166px] place-items-center rounded-lg bg-[#5b2be0] px-8 text-white shadow-[0_12px_24px_rgba(91,43,224,0.22)] max-[760px]:h-10 max-[760px]:min-w-[136px]">Choose photos</span>
       <span className="owner-body mt-6 block max-[760px]:mt-4">JPG, PNG or WEBP. Max size 10MB per photo.</span>
     </button>
   );
@@ -307,7 +322,7 @@ function TipsCard({ variant }: { variant: "desktop" | "mobile" }) {
           </div>
         ))}
       </div>
-      {variant === "desktop" ? <Link href="#" className="owner-body mt-auto flex items-center gap-2">Learn more about photography tips <Icon name="chevron" className="size-4 -rotate-90" /></Link> : <div className="mt-5 flex justify-center gap-1.5"><span className="owner-badge size-1.5 rounded-full bg-[var(--brand)]" /><span className="owner-badge size-1.5 rounded-full bg-[#d7dce8]" /><span className="owner-badge size-1.5 rounded-full bg-[#d7dce8]" /></div>}
+      {variant === "desktop" ? <Link href="#" className="owner-body mt-auto flex items-center gap-2">Learn more about photography tips <Icon name="chevron" className="size-4 -rotate-90" /></Link> : <div className="mt-5 flex justify-center gap-1.5"><span className="owner-badge size-1.5 rounded-full bg-[#5b2be0]" /><span className="owner-badge size-1.5 rounded-full bg-[#d7dce8]" /><span className="owner-badge size-1.5 rounded-full bg-[#d7dce8]" /></div>}
     </section>
   );
 }
@@ -333,7 +348,7 @@ function TipIcon({ name }: { name: (typeof tips)[number][0] }) {
   );
 }
 
-function PhotoGrid({ photos, onRemove, onAdd }: { photos: Photo[]; onRemove: (index: number) => void; onAdd: () => void }) {
+function PhotoGrid({ photos, onRemove, onAdd, onDragStart, onDrop }: { photos: Photo[]; onRemove: (index: number) => void; onAdd: () => void; onDragStart: (index: number) => void; onDrop: (index: number) => void }) {
   const displayPhotos = photos.length === defaultPhotos.length && photos.every((photo) => defaultPhotoNames.has(photo.name)) ? defaultPhotos : photos;
 
   return (
@@ -350,11 +365,11 @@ function PhotoGrid({ photos, onRemove, onAdd }: { photos: Photo[]; onRemove: (in
       </div>
       <div className="mt-5 grid grid-cols-4 gap-5 max-[900px]:grid-cols-3 max-[760px]:grid-cols-4 max-[760px]:gap-2">
         {displayPhotos.map((photo, index) => (
-          <article className="overflow-hidden rounded-lg border border-[#e7ebf3] bg-white shadow-[0_8px_18px_rgba(22,31,61,0.035)] max-[760px]:rounded-md max-[760px]:border-0 max-[760px]:shadow-none" key={`${photo.name}-${index}`}>
+          <article draggable onDragStart={() => onDragStart(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => onDrop(index)} className="cursor-grab overflow-hidden rounded-lg border border-[#e7ebf3] bg-white shadow-[0_8px_18px_rgba(22,31,61,0.035)] max-[760px]:rounded-md max-[760px]:border-0 max-[760px]:shadow-none" key={`${photo.name}-${index}`}>
             <div className="relative aspect-[1.56/1] overflow-hidden rounded-t-lg max-[760px]:aspect-square max-[760px]:rounded-md">
-              <Image src={photo.src} alt="" fill sizes="(max-width: 760px) 80px, 260px" className={`object-cover ${photo.position ?? "object-center"}`} />
+              <Image src={photo.src} alt="" fill sizes="(max-width: 760px) 80px, 260px" className={`object-cover ${photo.position ?? "object-center"}`}  quality={90}/>
               <span className="owner-badge absolute left-2 top-2 grid size-6 place-items-center rounded bg-white shadow-sm max-[760px]:left-1 max-[760px]:top-1 max-[760px]:size-5">{index + 1}</span>
-              {index === 0 ? <span className="owner-badge absolute left-10 top-2 rounded-md bg-[var(--brand)] px-3 py-1 text-white max-[760px]:left-7 max-[760px]:top-1 max-[760px]:px-2 max-[760px]:py-0.5">Cover</span> : null}
+              {index === 0 ? <span className="owner-badge absolute left-10 top-2 rounded-md bg-[#5b2be0] px-3 py-1 text-white max-[760px]:left-7 max-[760px]:top-1 max-[760px]:px-2 max-[760px]:py-0.5">Cover</span> : null}
               <span className="owner-body absolute left-3 top-9 text-white/85 max-[760px]:hidden"><Icon name="grip" className="size-5" /></span>
               <button onClick={() => onRemove(index)} className="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white text-[#52607a] shadow-sm max-[760px]:right-1 max-[760px]:top-1 max-[760px]:size-5"><Icon name="x" className="size-4 max-[760px]:size-3" /></button>
             </div>
@@ -375,24 +390,24 @@ function PhotoGrid({ photos, onRemove, onAdd }: { photos: Photo[]; onRemove: (in
   );
 }
 
-function DesktopActions({ onSave }: { onSave: () => void }) {
+function DesktopActions({ onSave, onDraft }: { onSave: () => void; onDraft: () => void }) {
   return (
     <div className="mt-6 flex items-center justify-between max-[760px]:hidden">
-      <Link href="/dashboard" className="owner-button-text flex h-11 items-center gap-3 rounded-lg border border-[#cbb8ff] px-6"><Icon name="arrow-right" className="size-4 rotate-180" />Back</Link>
+      <Link href={ownerRoutes.propertyEdit("1", "photos")} className="owner-button-text flex h-11 items-center gap-3 rounded-lg border border-[#cbb8ff] px-6"><Icon name="arrow-right" className="size-4 rotate-180" />Back</Link>
       <div className="flex items-center gap-4">
-        <button onClick={onSave} className="owner-button-text h-11 rounded-lg border border-[#cbb8ff] px-9">Save as Draft</button>
-        <button onClick={onSave} className="owner-button-text h-11 rounded-lg bg-[var(--brand)] px-12 text-white shadow-[0_12px_24px_rgba(91,43,224,0.24)]">Save Changes</button>
+        <button onClick={onDraft} className="owner-button-text h-11 rounded-lg border border-[#cbb8ff] px-9">Save as Draft</button>
+        <button onClick={onSave} className="owner-button-text h-11 rounded-lg bg-[#5b2be0] px-12 text-white shadow-[0_12px_24px_rgba(91,43,224,0.24)]">Save Changes</button>
       </div>
     </div>
   );
 }
 
-function MobileActions({ onSave }: { onSave: () => void }) {
+function MobileActions({ onSave, onDraft }: { onSave: () => void; onDraft: () => void }) {
   return (
     <div className="hidden max-[760px]:block">
       <div className="mt-4 space-y-3">
-        <button onClick={onSave} className="owner-button-text h-11 w-full rounded-lg border border-[#cbb8ff]">Save as Draft</button>
-        <button onClick={onSave} className="owner-button-text h-11 w-full rounded-lg bg-[var(--brand)] text-white shadow-[0_12px_24px_rgba(91,43,224,0.24)]">Save Changes</button>
+        <button onClick={onDraft} className="owner-button-text h-11 w-full rounded-lg border border-[#cbb8ff]">Save as Draft</button>
+        <button onClick={onSave} className="owner-button-text h-11 w-full rounded-lg bg-[#5b2be0] text-white shadow-[0_12px_24px_rgba(91,43,224,0.24)]">Save Changes</button>
       </div>
     </div>
   );

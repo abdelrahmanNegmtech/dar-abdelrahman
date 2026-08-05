@@ -13,7 +13,8 @@ export function HeroSection() {
           alt="Premium apartment balcony overlooking the Nile in Cairo"
           className="absolute inset-0 size-full object-cover object-center brightness-[0.9] contrast-[1.08] saturate-[1.12]"
           fill
-          priority
+          loading="eager"
+          fetchPriority="high"
           sizes="100vw"
           src={marketplaceImages.hero}
         />

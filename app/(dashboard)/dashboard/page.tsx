@@ -3,13 +3,27 @@ import Link from "next/link";
 import { Icon } from "@/components/host-landing/icons";
 import { OwnerProfileLink } from "@/components/owners/owner-profile-link";
 import { DarLogo } from "@/components/brand/dar-logo";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
+import { ownerRoutes } from "@/lib/owner-routes";
 
 const ahmedHassan = {
   name: "Ahmed Hassan",
   slug: "ahmed-hassan",
 } as const;
 
-const navItems = ["Overview", "My Bookings", "Saved Stays", "Messages", "Payments", "Reviews", "Profile", "Support", "Settings"];
+const navItems = ["Overview", "My Bookings", "Saved Stays", "Messages", "Payments", "Reviews", "Profile", "Support", "Settings"] as const;
+
+const navRoutes: Record<(typeof navItems)[number], string> = {
+  Overview: ownerRoutes.dashboard,
+  "My Bookings": ownerRoutes.bookingRequests,
+  "Saved Stays": ownerRoutes.properties,
+  Messages: ownerRoutes.messages,
+  Payments: ownerRoutes.payouts,
+  Reviews: ownerRoutes.reviews,
+  Profile: ownerRoutes.publicProfile("ahmed-hassan"),
+  Support: ownerRoutes.help,
+  Settings: ownerRoutes.settings,
+};
 
 const stats = [
   ["calendar", "Upcoming bookings", "2", "Next check-in in 3 days", "bg-[#f1edff]", "text-[#5b2be0]"],
@@ -20,21 +34,21 @@ const stats = [
 ] as const;
 
 const bookingRows = [
-  ["property-studio-reference.png", "Luxury Studio in Madinaty", "B6, Madinaty", "May 20 - 25, 2026", "(5 nights)", "EGP 6,370", "pay-vodafone-reference.png", "Vodafone Cash", "Verified", "Confirmed", "View"],
-  ["property-hotel-reference.png", "Premium Hotel Room", "Cairo East", "Jun 02 - 05, 2026", "(3 nights)", "EGP 4,800", "pay-card-reference.png", "VISA •••• 4242", "Pending", "Pending owner approval", "View"],
-  ["property-serviced-reference.png", "Cozy Studio with Balcony", "Noor City", "Apr 28 - May 01, 2026", "(3 nights)", "EGP 3,200", "pay-fawry-reference.png", "fawry", "Paid", "Completed", "Review"],
+  ["property-studio-sharp.png", "Luxury Studio in Madinaty", "B6, Madinaty", "May 20 - 25, 2026", "(5 nights)", "EGP 6,370", "pay-vodafone-reference.png", "Vodafone Cash", "Verified", "Confirmed", "View"],
+  ["property-hotel-sharp.png", "Premium Hotel Room", "Cairo East", "Jun 02 - 05, 2026", "(3 nights)", "EGP 4,800", "pay-card-reference.png", "VISA  \u2022\u2022\u2022\u2022 4242", "Pending", "Pending owner approval", "View"],
+  ["property-serviced-sharp.png", "Cozy Studio with Balcony", "Noor City", "Apr 28 - May 01, 2026", "(3 nights)", "EGP 3,200", "pay-fawry-reference.png", "fawry", "Paid", "Completed", "Review"],
 ] as const;
 
 const savedStays = [
-  ["property-studio-reference.png", "Modern Furnished Apartment", "New Capital", "4.8 (18)", "EGP 1,600"],
-  ["property-serviced-reference.png", "Serviced Apartment near B12", "Madinaty", "4.9 (27)", "EGP 1,800"],
-  ["property-hotel-reference.png", "Premium Hotel Room", "Cairo East", "4.7 (41)", "EGP 1,450"],
+  ["property-studio-sharp.png", "Modern Furnished Apartment", "New Capital", "4.8 (18)", "EGP 1,600"],
+  ["property-serviced-sharp.png", "Serviced Apartment near B12", "Madinaty", "4.9 (27)", "EGP 1,800"],
+  ["property-hotel-sharp.png", "Premium Hotel Room", "Cairo East", "4.7 (41)", "EGP 1,450"],
 ] as const;
 
 const recommendations = [
-  ["property-furnished-reference.png", "Match 90%", "Luxury Apartment", "Madinaty", "EGP 1,700", "4.9 (23)"],
+  ["property-furnished-sharp.png", "Match 90%", "Luxury Apartment", "Madinaty", "EGP 1,700", "4.9 (23)"],
   ["dar-host-hero-bg-final.png", "Match 88%", "Skyline Studio", "New Capital", "EGP 1,250", "4.8 (19)"],
-  ["property-hotel-reference.png", "Match 86%", "Cozy Loft", "Noor City", "EGP 1,050", "4.7 (16)"],
+  ["property-hotel-sharp.png", "Match 86%", "Cozy Loft", "Noor City", "EGP 1,050", "4.7 (16)"],
 ] as const;
 
 const cardFrame = "rounded-lg border border-[#e2e7f0] bg-white shadow-[0_8px_24px_rgba(8,18,43,0.03)]";
@@ -88,7 +102,7 @@ function Sidebar() {
       <nav className="mt-5 space-y-2">
         {navItems.map((item, index) => (
           <Link
-            href={item === "My Bookings" ? "/owner/bookings/request-decision" : index === 0 ? "/dashboard" : `/dashboard/${item.toLowerCase().replaceAll(" ", "-")}`}
+            href={navRoutes[item]}
             className={`relative flex h-11 items-center gap-3 rounded-md px-4 text-sm font-semibold ${index === 0 ? "bg-white/10 text-white before:absolute before:left-0 before:h-full before:w-1 before:rounded-r before:bg-[#7c3cff]" : "text-white/90 hover:bg-white/5"}`}
             key={item}
           >
@@ -102,7 +116,7 @@ function Sidebar() {
         <Icon name="home" className="size-8 text-[#f5a524]" />
         <h3 className="mt-3 text-sm font-bold">List your property</h3>
         <p className="mt-2 text-xs leading-5 text-white/75">Earn more by sharing your space with travelers.</p>
-        <Link href="/owner/properties/new/photos" className="mt-5 flex h-9 items-center justify-center rounded-md bg-[#5b2be0] text-sm font-bold text-white">Become a host</Link>
+        <Link href={ownerRoutes.addProperty} className="mt-5 flex h-9 items-center justify-center rounded-md bg-[#5b2be0] text-sm font-bold text-white">Become a host</Link>
       </div>
     </aside>
   );
@@ -154,7 +168,7 @@ function UpcomingStay() {
       <h2 className="text-base font-bold leading-5">Upcoming stay</h2>
       <div className="absolute right-4 top-[24px] rounded-lg bg-[#f1edff] px-4 py-2.5 text-center text-[#5b2be0]"><p className="text-xs">Check-in in</p><b className="text-3xl leading-8">3</b><p className="text-xs">days</p></div>
       <div className="mt-3 grid grid-cols-[minmax(220px,255px)_minmax(0,1fr)] gap-5 max-[1450px]:grid-cols-[220px_minmax(0,1fr)]">
-        <Image src="/property-studio-reference.png" alt="" width={255} height={181} className="h-[181px] w-full rounded-md object-cover object-center" />
+        <Image src="/property-studio-sharp.png" alt="" width={255} height={181} className="h-[181px] w-full rounded-md object-cover object-center"  quality={90}/>
         <div className="min-w-0">
           <h3 className="pr-[96px] text-[18px] font-bold leading-6">Luxury Studio in Madinaty</h3>
           <p className="mt-1.5 text-sm text-[#52607a]"><Icon name="star" className="inline size-[13px] fill-[#f7a20b] text-[#f7a20b]"/> 4.9 (32 reviews)</p>
@@ -175,7 +189,7 @@ function UpcomingStay() {
                 Owner confirmed
               </OwnerProfileLink>
             </div>
-            <div><p className="text-xs text-[#52607a]">Payment</p><span className="mt-1 inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-semibold"><Image src="/pay-vodafone-reference.png" alt="" width={18} height={18} className="shrink-0" />Vodafone Cash <small className="shrink-0 rounded bg-[#dff7e8] px-2 py-1 text-[#11813a]">Verified</small></span></div>
+            <div><p className="text-xs text-[#52607a]">Payment</p><span className="mt-1 inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-semibold"><Image src="/pay-vodafone-reference.png" alt="" width={18} height={18} className="shrink-0"  quality={90}/>Vodafone Cash <small className="shrink-0 rounded bg-[#dff7e8] px-2 py-1 text-[#11813a]">Verified</small></span></div>
           </div>
         </div>
       </div>
@@ -230,17 +244,17 @@ function MessagesCard() {
       </div>
       <div className="mt-4 space-y-3.5">
         {[
-          { name: "Ahmed Hassan (Owner)", msg: "Check-in details are ready.", time: "10:30 AM", img: "dashboard-avatar-sara.png", owner: ahmedHassan },
+          { name: "Ahmed Hassan (Owner)", msg: "Check-in details are ready.", time: "10:30 AM", img: "owner-selfie-ahmed-reference.png", owner: ahmedHassan },
           { name: "DAR Support", msg: "Your Vodafone Cash payment has been verified.", time: "Yesterday", img: "dashboard-avatar-support.png" },
-          { name: "Nile Stay Group", msg: "Please confirm your arrival time.", time: "2 days ago", img: "property-furnished-reference.png" },
+          { name: "Nile Stay Group", msg: "Please confirm your arrival time.", time: "2 days ago", img: "property-furnished-sharp.png" },
         ].map(({ name, msg, time, img, owner }) => (
           <div className="flex min-h-[40px] items-center gap-3" key={name}>
             {owner ? (
               <OwnerProfileLink owner={owner} className="shrink-0 rounded-full hover:opacity-90 hover:ring-2 hover:ring-[#6d35ee]/30">
-                <Image src={`/${img}`} alt={owner.name} width={38} height={38} className="size-[38px] rounded-full object-cover" />
+                <ProfileAvatar src={`/${img}`} name={name.replace(" (Owner)", "")} size={38}/>
               </OwnerProfileLink>
             ) : (
-              <Image src={`/${img}`} alt="" width={38} height={38} className="size-[38px] shrink-0 rounded-full object-cover" />
+              <ProfileAvatar src={`/${img}`} name={name} size={38}/>
             )}
             <div className="min-w-0 flex-1">
               {owner ? (
@@ -280,7 +294,7 @@ function WalletCard() {
         ["pay-card-reference.png", "Premium Hotel Room", "EGP 4,800", "Pending"],
       ].map(([logo, stay, amount, status]) => (
         <div className="mt-2 flex items-center gap-3 text-xs" key={stay}>
-          <Image src={`/${logo}`} alt="" width={28} height={20} className="w-7 object-contain" />
+          <Image src={`/${logo}`} alt="" width={28} height={20} className="w-7 object-contain"  quality={90}/>
           <div className="min-w-0 flex-1">
             <p className="font-medium leading-4">{stay}</p>
             <small className="text-[#52607a]">May 10, 2026</small>
@@ -323,14 +337,14 @@ function BookingsTable() {
             <tr className="border-t border-[#e2e7f0]" key={title}>
               <td className="py-3">
                 <div className="flex items-center gap-3">
-                  <Image src={`/${img}`} alt="" width={54} height={40} className="h-10 w-[54px] rounded object-cover" />
+                  <Image src={`/${img}`} alt="" width={54} height={40} className="h-10 w-[54px] rounded object-cover"  quality={90}/>
                   <div><b className="text-xs">{title}</b><p className="mt-1 text-[11px] text-[#52607a]">{city}</p></div>
                 </div>
               </td>
               <td>{dates}<p className="mt-1 text-[11px] text-[#52607a]">{nights}</p></td>
               <td>{total}</td>
               <td>
-                <span className="flex items-center gap-2"><Image src={`/${logo}`} alt="" width={24} height={16} className="w-6 object-contain" /><b>{payment}</b></span>
+                <span className="flex items-center gap-2"><Image src={`/${logo}`} alt="" width={24} height={16} className="w-6 object-contain"  quality={90}/><b>{payment}</b></span>
                 <p className={payStatus === "Verified" || payStatus === "Paid" ? "mt-1 text-[#11813a]" : "mt-1 text-[#f59f00]"}>{payStatus}</p>
               </td>
               <td><span className={`rounded px-2 py-1 text-xs ${status === "Confirmed" || status === "Completed" ? "bg-[#dff7e8] text-[#11813a]" : "bg-[#fff0d6] text-[#d98200]"}`}>{status}</span></td>
@@ -354,7 +368,7 @@ function SavedStays() {
         {savedStays.map(([img, title, city, rating, price]) => (
           <article className="overflow-hidden rounded-md border border-[#e2e7f0]" key={title}>
             <div className="relative h-[104px]">
-              <Image src={`/${img}`} alt="" fill sizes="180px" className="object-cover" />
+              <Image src={`/${img}`} alt="" fill sizes="180px" className="object-cover"  quality={90}/>
               <span className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-[#ef476f] text-white"><Icon name="heart" className="size-[13px]"/></span>
             </div>
             <div className="p-3 text-xs">
@@ -402,7 +416,7 @@ function AiRecommendations() {
         {recommendations.map(([img, badge, title, city, price, rating]) => (
           <article className="overflow-hidden rounded-md border border-[#e2e7f0] text-[10px]" key={title}>
             <div className="relative h-[82px]">
-              <Image src={`/${img}`} alt="" fill sizes="82px" className="object-cover" />
+              <Image src={`/${img}`} alt="" fill sizes="82px" className="object-cover"  quality={90}/>
               <span className="absolute left-1.5 top-1.5 rounded bg-[#5b2be0] px-2 py-1 text-[9px] font-bold leading-none text-white">{badge}</span>
             </div>
             <div className="p-2 leading-[14px]">
@@ -420,6 +434,6 @@ function AiRecommendations() {
 }
 
 function Avatar({ size = "md" }: { size?: "md" | "lg" }) {
-  const cls = size === "lg" ? "size-12" : "size-10";
-  return <Image src="/dashboard-avatar-omar.png" alt="" width={48} height={48} className={`${cls} shrink-0 rounded-full object-cover`} />;
+  const pixels = size === "lg" ? 48 : 40;
+  return <ProfileAvatar src="/dashboard-avatar-omar.png" name="Ismail Negm" size={pixels}/>;
 }
