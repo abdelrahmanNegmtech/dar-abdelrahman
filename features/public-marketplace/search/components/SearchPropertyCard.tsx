@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MouseEvent } from "react";
+import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
 import { useFavorites } from "../../favorites/useFavorites";
 import { HeartIcon, ShieldIcon, StarIcon } from "../icons";
-import { SearchProperty } from "../data";
 
 type SearchPropertyCardProps = {
   compact?: boolean;
-  property: SearchProperty;
+  property: PublicPropertyCard;
 };
 
 export function SearchPropertyCard({ compact = false, property }: SearchPropertyCardProps) {
@@ -59,7 +59,7 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="line-clamp-2 text-[16px] font-bold leading-5 xl:text-[17px]">
-              {property.id}. {property.title}
+              {property.title}
             </h2>
             <p className="mt-1 truncate text-[13px] text-[#64748B]">
               {property.area}, {property.location}

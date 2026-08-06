@@ -2,11 +2,12 @@
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { properties } from "../data";
+import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
 import { ExpandIcon, MapPinIcon, RefreshCwIcon, SearchIcon } from "../icons";
 
 type MapPanelProps = {
   focused?: boolean;
+  properties: PublicPropertyCard[];
 };
 
 type LatLngLiteral = {
@@ -79,14 +80,14 @@ const GOOGLE_MAPS_SCRIPT_ID = "dar-google-maps-js";
 
 let googleMapsPromise: Promise<GoogleMapsApi> | null = null;
 
-export function MapPanel({ focused = false }: MapPanelProps) {
+export function MapPanel({ focused = false, properties }: MapPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMap | null>(null);
-  const [destination, setDestination] = useState(searchParams.get("destination") ?? "Madinaty");
-  const [selectedPlace, setSelectedPlace] = useState(searchParams.get("destination") ?? "Madinaty");
+  const [destination, setDestination] = useState(searchParams.get("destination") ?? "All destinations");
+  const [selectedPlace, setSelectedPlace] = useState(searchParams.get("destination") ?? "All destinations");
   const [status, setStatus] = useState<"loading" | "missing-key" | "error" | "ready">(
     GOOGLE_MAPS_KEY ? "loading" : "missing-key",
   );
@@ -169,15 +170,15 @@ export function MapPanel({ focused = false }: MapPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [destination, focused, updateUrl]);
+  }, [destination, focused, properties, updateUrl]);
 
   function recenter() {
     mapRef.current?.setCenter(MAP_CENTER);
     mapRef.current?.setZoom(focused ? 14 : 13);
-    setDestination("Madinaty");
-    setSelectedPlace("Madinaty");
+    setDestination("All destinations");
+    setSelectedPlace("All destinations");
     setMessage("");
-    updateUrl("Madinaty");
+    updateUrl("All destinations");
   }
 
   function search(event: FormEvent<HTMLFormElement>) {

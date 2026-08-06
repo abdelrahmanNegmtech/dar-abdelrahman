@@ -1,4 +1,4 @@
-import type { AccountType } from "../authTypes";
+import type { AccountType } from "@/lib/supabase/database";
 
 export function getSafeRedirect(value: string | null | undefined, fallback = "/search") {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {

@@ -41,7 +41,15 @@ function isPlaceholder(value: string) {
 function isValidSupabaseUrl(value: string) {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname.endsWith(".supabase.co");
+    const isHostedSupabase =
+      url.protocol === "https:" && url.hostname.endsWith(".supabase.co");
+    const isLocalSupabase =
+      url.protocol === "http:" &&
+      (url.hostname === "127.0.0.1" ||
+        url.hostname === "localhost" ||
+        url.hostname === "::1");
+
+    return isHostedSupabase || isLocalSupabase;
   } catch {
     return false;
   }

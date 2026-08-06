@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import type { ProfileRow } from "@/lib/supabase/database";
 import { createClient } from "@/lib/supabase/server";
 import type {
   BookingStatus,
@@ -13,7 +14,29 @@ import { summarizeNotifications } from "../utils";
 import { devProfile, devTravelerData } from "./devData";
 import { getDevStore } from "./devStore";
 
-type SupabaseProfileRow = Record<string, unknown>;
+type SupabaseProfileRow = Pick<
+  ProfileRow,
+  | "account_type"
+  | "address"
+  | "avatar_url"
+  | "city"
+  | "country"
+  | "date_of_birth"
+  | "display_name"
+  | "email"
+  | "email_verified"
+  | "emergency_contact_name"
+  | "emergency_contact_phone"
+  | "full_name"
+  | "id"
+  | "identity_verified"
+  | "nationality"
+  | "phone"
+  | "phone_verified"
+  | "preferred_currency"
+  | "preferred_language"
+  | "profile_completion"
+>;
 
 const devAuthBypassTravelerProfile: TravelerProfile = {
   ...devProfile,
@@ -51,47 +74,37 @@ function getTravelerStoreData(): TravelerData {
   return cloneTravelerData(devTravelerData);
 }
 
-function readString(row: SupabaseProfileRow, key: string, fallback: string) {
-  const value = row[key];
-  return typeof value === "string" && value.length > 0 ? value : fallback;
-}
-
-function readNumber(row: SupabaseProfileRow, key: string, fallback: number) {
-  const value = row[key];
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
 function mapProfile(row: SupabaseProfileRow | null | undefined, fallback: TravelerProfile): TravelerProfile {
   if (!row) {
     return fallback;
   }
 
   const accountType: TravelerProfile["accountType"] =
-    readString(row, "account_type", fallback.accountType) === "owner" ? "owner" : "guest";
+    row.account_type === "owner" ? "owner" : "guest";
 
   return {
     ...fallback,
     accountType,
     activity: fallback.activity,
-    address: readString(row, "address", fallback.address),
-    avatarUrl: readString(row, "avatar_url", fallback.avatarUrl),
-    city: readString(row, "city", fallback.city),
-    completion: readNumber(row, "profile_completion", fallback.completion),
-    country: readString(row, "country", fallback.country),
-    dateOfBirth: readString(row, "date_of_birth", fallback.dateOfBirth),
-    displayName: readString(row, "display_name", fallback.displayName),
-    email: readString(row, "email", fallback.email),
-    emailVerified: readString(row, "email_verified", String(fallback.emailVerified)) === "true",
-    emergencyContactName: readString(row, "emergency_contact_name", fallback.emergencyContactName),
-    emergencyContactPhone: readString(row, "emergency_contact_phone", fallback.emergencyContactPhone),
-    fullName: readString(row, "full_name", fallback.fullName),
-    id: readString(row, "id", fallback.id),
-    identityVerified: readString(row, "identity_verified", String(fallback.identityVerified)) === "true",
-    nationality: readString(row, "nationality", fallback.nationality),
-    phone: readString(row, "phone", fallback.phone),
-    phoneVerified: readString(row, "phone_verified", String(fallback.phoneVerified)) === "true",
-    preferredCurrency: readString(row, "preferred_currency", fallback.preferredCurrency),
-    preferredLanguage: readString(row, "preferred_language", fallback.preferredLanguage),
+    address: row.address ?? fallback.address,
+    avatarUrl: row.avatar_url ?? fallback.avatarUrl,
+    city: row.city ?? fallback.city,
+    completion: row.profile_completion,
+    country: row.country ?? fallback.country,
+    dateOfBirth: row.date_of_birth ?? fallback.dateOfBirth,
+    displayName: row.display_name ?? fallback.displayName,
+    email: row.email ?? fallback.email,
+    emailVerified: row.email_verified,
+    emergencyContactName: row.emergency_contact_name ?? fallback.emergencyContactName,
+    emergencyContactPhone: row.emergency_contact_phone ?? fallback.emergencyContactPhone,
+    fullName: row.full_name,
+    id: row.id,
+    identityVerified: row.identity_verified,
+    nationality: row.nationality ?? fallback.nationality,
+    phone: row.phone ?? fallback.phone,
+    phoneVerified: row.phone_verified,
+    preferredCurrency: row.preferred_currency ?? fallback.preferredCurrency,
+    preferredLanguage: row.preferred_language ?? fallback.preferredLanguage,
   };
 }
 
@@ -123,9 +136,11 @@ async function getAuthenticatedProfile() {
 
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select(
+      "id, account_type, full_name, display_name, email, phone, avatar_url, date_of_birth, nationality, preferred_language, preferred_currency, city, country, address, profile_completion, email_verified, phone_verified, identity_verified, emergency_contact_name, emergency_contact_phone",
+    )
     .eq("id", user.id)
-    .maybeSingle<SupabaseProfileRow>();
+    .maybeSingle();
 
   return {
     profile: mapProfile(data, { ...devProfile, email: user.email ?? devProfile.email, id: user.id }),

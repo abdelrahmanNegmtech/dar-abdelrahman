@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
 import { getSupabaseConfig } from "@/lib/supabase/config";
+import type { DbEnum } from "@/lib/supabase/database";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import type { ActionResult } from "./types";
@@ -39,6 +40,23 @@ type ActionUser = {
   usingFallback: boolean;
 };
 
+type SupportTicketCategory = DbEnum<"support_ticket_category">;
+type SupportSenderRole = DbEnum<"support_sender_role">;
+
+const supportTicketCategoryMap: Record<string, SupportTicketCategory> = {
+  "Account": "account_issue",
+  "Booking help": "booking_issue",
+  "Check-in / access": "property_issue",
+  "Payments": "payment_issue",
+  "Property issue": "property_issue",
+  "Refunds": "refund_request",
+  "Safety or security": "other",
+  "Technical issue": "technical_issue",
+};
+
+function mapSupportTicketCategory(category: string): SupportTicketCategory | null {
+  return supportTicketCategoryMap[category] ?? null;
+}
 
 function ok(message: string): ActionResult {
   return { message, ok: true };
@@ -46,6 +64,10 @@ function ok(message: string): ActionResult {
 
 function fail(message: string): ActionResult {
   return { message, ok: false };
+}
+
+function getProfileUpdateErrorMessage() {
+  return "We could not save your profile changes right now. Please try again.";
 }
 
 async function getActionUser(): Promise<ActionUser | null> {
@@ -108,7 +130,7 @@ export async function toggleSavedProperty(propertyId: string): Promise<ActionRes
       .select("property_id")
       .eq("traveler_id", user.id)
       .eq("property_id", propertyId)
-      .maybeSingle<{ property_id: string }>();
+      .maybeSingle();
 
     if (existing) {
       const { error } = await supabase
@@ -191,7 +213,7 @@ export async function sendConversationMessage(input: unknown): Promise<ActionRes
       .select("conversation_id")
       .eq("conversation_id", parsed.data.conversationId)
       .eq("user_id", user.id)
-      .maybeSingle<{ conversation_id: string }>();
+      .maybeSingle();
 
     if (!member) {
       return fail("You do not have access to this conversation.");
@@ -411,7 +433,7 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
       .eq("id", parsed.data.bookingId)
       .eq("traveler_id", user.id)
       .eq("status", "completed")
-      .maybeSingle<{ id: string; owner_id: string; property_id: string; status: string }>();
+      .maybeSingle();
 
     if (!booking) {
       return fail("Only completed bookings can be reviewed.");
@@ -540,6 +562,7 @@ export async function updateTravelerProfile(input: unknown): Promise<ActionResul
         city: parsed.data.city,
         country: parsed.data.country,
         date_of_birth: parsed.data.dateOfBirth,
+        display_name: parsed.data.displayName ?? null,
         emergency_contact_name: parsed.data.emergencyContactName ?? null,
         emergency_contact_phone: parsed.data.emergencyContactPhone ?? null,
         full_name: parsed.data.fullName,
@@ -550,7 +573,7 @@ export async function updateTravelerProfile(input: unknown): Promise<ActionResul
       })
       .eq("id", user.id);
 
-    if (error) return fail(error.message);
+    if (error) return fail(getProfileUpdateErrorMessage());
   }
 
   revalidatePath("/traveler/profile");
@@ -639,13 +662,19 @@ export async function createSupportTicket(input: unknown): Promise<ActionResult>
     return fail("Please sign in to create a support ticket.");
   }
 
+  const mappedCategory = mapSupportTicketCategory(parsed.data.category);
+
+  if (!mappedCategory) {
+    return fail("Please select a valid support category.");
+  }
+
   if (supabase) {
     const reference = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
     const { data: ticket, error } = await supabase
       .from("support_tickets")
       .insert({
         booking_id: parsed.data.bookingId || null,
-        category: parsed.data.category,
+        category: mappedCategory,
         priority: parsed.data.priority,
         status: "open",
         subject: parsed.data.subject,
@@ -653,7 +682,7 @@ export async function createSupportTicket(input: unknown): Promise<ActionResult>
         user_id: user.id,
       })
       .select("id")
-      .single<{ id: string }>();
+      .single();
 
     if (error) return fail(error.message);
 
@@ -661,6 +690,7 @@ export async function createSupportTicket(input: unknown): Promise<ActionResult>
       is_internal: false,
       message: parsed.data.message,
       sender_id: user.id,
+      sender_role: "traveler" as SupportSenderRole,
       ticket_id: ticket.id,
     });
 
@@ -702,7 +732,7 @@ export async function replyToSupportTicket(input: unknown): Promise<ActionResult
       .select("id")
       .eq("id", parsed.data.ticketId)
       .eq("user_id", user.id)
-      .maybeSingle<{ id: string }>();
+      .maybeSingle();
 
     if (!ticket) {
       return fail("You do not have access to this ticket.");
@@ -712,6 +742,7 @@ export async function replyToSupportTicket(input: unknown): Promise<ActionResult
       is_internal: false,
       message: parsed.data.message,
       sender_id: user.id,
+      sender_role: "traveler" as SupportSenderRole,
       ticket_id: ticket.id,
     });
 

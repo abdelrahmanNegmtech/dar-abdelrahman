@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { BrowseAllPhotosSection } from "./BrowseAllPhotosSection";
 import { GalleryCategoryTabs } from "./GalleryCategoryTabs";
 import { GalleryHeader } from "./GalleryHeader";
@@ -8,14 +9,15 @@ import { GalleryInfoBanner } from "./GalleryInfoBanner";
 import { GallerySidebar } from "./GallerySidebar";
 import { GalleryThumbnailStrip } from "./GalleryThumbnailStrip";
 import { HeroGalleryViewer } from "./HeroGalleryViewer";
-import { propertyGalleryPhotos } from "../data";
 import { marketplaceImages } from "../../assets";
 import { ShareModal, useShareModal } from "../../share";
 import { useFavorites } from "../../favorites/useFavorites";
 
-const PROPERTY_SLUG = "luxury-studio-in-madinaty";
+type PropertyGalleryPageProps = {
+  property: PublicPropertyDetail;
+};
 
-export function PropertyGalleryPage() {
+export function PropertyGalleryPage({ property }: PropertyGalleryPageProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [category, setCategory] = useState("All photos");
   const [verifiedOnly, setVerifiedOnly] = useState(true);
@@ -24,13 +26,20 @@ export function PropertyGalleryPage() {
   const [modal, setModal] = useState<"zoom" | "report" | "reserve" | null>(null);
   const { closeShare, open, openShare, state, triggerRef } = useShareModal();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(PROPERTY_SLUG);
+  const saved = isFavorite(property.slug);
 
   const visiblePhotos = useMemo(
-    () => category === "All photos" ? propertyGalleryPhotos : propertyGalleryPhotos.filter((photo) => photo.category === category || (category === "Amenities" && photo.category === "Workspace")),
-    [category],
+    () =>
+      category === "All photos"
+        ? property.galleryPhotos
+        : property.galleryPhotos.filter(
+            (photo) =>
+              photo.category === category ||
+              (category === "Amenities" && photo.category === "Workspace"),
+          ),
+    [category, property.galleryPhotos],
   );
-  const safePhotos = visiblePhotos.length ? visiblePhotos : propertyGalleryPhotos;
+  const safePhotos = visiblePhotos.length ? visiblePhotos : property.galleryPhotos;
   const activePhoto = safePhotos[activeIndex % safePhotos.length];
 
   useEffect(() => {
@@ -66,7 +75,8 @@ export function PropertyGalleryPage() {
         onSlideshow={() => setSlideshow((current) => !current)}
         saved={saved}
         slideshow={slideshow}
-        onSave={() => toggleFavorite(PROPERTY_SLUG)}
+        onSave={() => toggleFavorite(property.slug)}
+        property={property}
       />
       <div className="mx-auto max-w-[1760px] px-4 pb-8 pt-5 sm:px-7 lg:px-8 lg:pt-[92px]">
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_385px]">
@@ -85,15 +95,15 @@ export function PropertyGalleryPage() {
             <GalleryThumbnailStrip activeIndex={activeIndex} photos={safePhotos} onSelect={setActiveIndex} />
           </div>
           <div className="hidden min-w-0 xl:block">
-            <GallerySidebar onReport={() => setModal("report")} onReserve={() => setModal("reserve")} />
+            <GallerySidebar onReport={() => setModal("report")} onReserve={() => setModal("reserve")} property={property} />
           </div>
         </div>
 
         <div className="mt-8 hidden md:block xl:hidden">
-          <GallerySidebar onReport={() => setModal("report")} onReserve={() => setModal("reserve")} />
+          <GallerySidebar onReport={() => setModal("report")} onReserve={() => setModal("reserve")} property={property} />
         </div>
         <div className="mt-6 md:hidden">
-          <GallerySidebar compact onReport={() => setModal("report")} onReserve={() => setModal("reserve")} />
+          <GallerySidebar compact onReport={() => setModal("report")} onReserve={() => setModal("reserve")} property={property} />
         </div>
 
         <div className="mt-8">
@@ -140,12 +150,12 @@ export function PropertyGalleryPage() {
         onClose={closeShare}
         open={open}
         property={{
-          image: marketplaceImages.studio,
-          location: "B6, Madinaty, Cairo, Egypt",
-          price: "EGP 1,200 / night",
-          rating: "4.9 (32)",
-          title: "Luxury Studio in Madinaty",
-          url: "/stays/luxury-studio-in-madinaty/gallery",
+          image: property.galleryPhotos[0]?.src ?? marketplaceImages.studio,
+          location: property.subtitle,
+          price: `${property.priceLabel} / night`,
+          rating: `${property.rating.toFixed(1)} (${property.reviewsCount})`,
+          title: property.title,
+          url: `/stays/${property.slug}/gallery`,
           verified: true,
         }}
         state={state}

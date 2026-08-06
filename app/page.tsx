@@ -1,3 +1,4 @@
+import { getFeaturedPublicProperties } from "@/features/properties/data/public-property-queries";
 import { HeroSection } from "@/features/public-marketplace/components/HeroSection";
 import { HostCTASection } from "@/features/public-marketplace/components/HostCTASection";
 import { HowItWorksSection } from "@/features/public-marketplace/components/HowItWorksSection";
@@ -7,7 +8,9 @@ import { PopularStaysSection } from "@/features/public-marketplace/components/Po
 import { RecommendationsSection } from "@/features/public-marketplace/components/RecommendationsSection";
 import { WhyBookSection } from "@/features/public-marketplace/components/WhyBookSection";
 
-export default function Home() {
+export default async function Home() {
+  const featuredStays = await getFeaturedPublicProperties(4).catch(() => []);
+
   return (
     <main id="main-content">
       <HeroSection />
@@ -15,7 +18,7 @@ export default function Home() {
       <WhyBookSection />
       <HowItWorksSection />
       <PopularDestinationsSection />
-      <PopularStaysSection />
+      <PopularStaysSection stays={featuredStays} />
       <HostCTASection />
       <MarketplaceFooter />
     </main>

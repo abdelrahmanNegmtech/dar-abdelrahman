@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isDevAuthBypassEnabled, isTravelerPathname } from "../auth/devAuthBypass";
+import type { AccountType } from "./database";
+import type { Database } from "./database.types";
 import { getSupabaseConfig } from "./config";
 
 const protectedRoutePrefixes = ["/dashboard", "/owner", "/admin", "/traveler"];
@@ -48,7 +50,7 @@ export async function updateSession(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     config.url,
     config.publicKey,
     {
@@ -87,16 +89,21 @@ export async function updateSession(request: NextRequest) {
       .from("profiles")
       .select("account_type")
       .eq("id", user.id)
-      .maybeSingle<{ account_type: "guest" | "owner" | null }>();
+      .maybeSingle();
+    const accountType = profile?.account_type as AccountType | null | undefined;
 
     if (isAuthEntryRoute(request.nextUrl.pathname)) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = getRoleDestination(profile?.account_type);
+      redirectUrl.pathname = getRoleDestination(accountType);
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }
 
-    if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+    if (
+      (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) &&
+      accountType !== "admin" &&
+      accountType !== "support_staff"
+    ) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/search";
       redirectUrl.search = "";
@@ -106,7 +113,7 @@ export async function updateSession(request: NextRequest) {
     if (
       (request.nextUrl.pathname === "/owner" ||
         request.nextUrl.pathname.startsWith("/owner/")) &&
-      profile?.account_type !== "owner"
+      accountType !== "owner"
     ) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/search";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import {
   CalendarIcon,
   ChevronDownIcon,
@@ -15,22 +16,22 @@ import {
 
 type BookingCardProps = {
   compact?: boolean;
+  property: PublicPropertyDetail;
 };
 
-const nightlyRate = 1200;
-const cleaningFee = 250;
-const serviceFee = 420;
-
-export function BookingCard({ compact = false }: BookingCardProps) {
+export function BookingCard({ compact = false, property }: BookingCardProps) {
   const [picker, setPicker] = useState<"checkin" | "checkout" | "guests" | null>(null);
-  const [checkIn, setCheckIn] = useState("2026-05-20");
-  const [checkOut, setCheckOut] = useState("2026-05-25");
-  const [guests, setGuests] = useState(2);
+  const [checkIn, setCheckIn] = useState("2026-08-20");
+  const [checkOut, setCheckOut] = useState("2026-08-25");
+  const [guests, setGuests] = useState(Math.min(2, property.maxGuests));
   const [promo, setPromo] = useState("");
   const [message, setMessage] = useState("");
   const [modal, setModal] = useState<"booking" | "contact" | null>(null);
 
   const nights = useMemo(() => getNights(checkIn, checkOut), [checkIn, checkOut]);
+  const nightlyRate = property.pricePerNight;
+  const cleaningFee = Math.round(property.cleaningFeeAmount / 100);
+  const serviceFee = Math.round(property.pricePerNight * 0.12);
   const subtotal = nightlyRate * nights;
   const total = subtotal + cleaningFee + serviceFee;
 
@@ -58,7 +59,7 @@ export function BookingCard({ compact = false }: BookingCardProps) {
         </p>
         <p className="inline-flex items-center gap-1 text-[14px]">
           <StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />
-          4.9 <span className="text-[#475569]">(32 reviews)</span>
+          {property.rating.toFixed(1)} <span className="text-[#475569]">({property.reviewsCount} reviews)</span>
         </p>
       </div>
 

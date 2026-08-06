@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { similarStays } from "../data";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { HeartIcon, StarIcon } from "../icons";
 
 type SimilarStaysSectionProps = {
   mobile?: boolean;
+  property: PublicPropertyDetail;
 };
 
-export function SimilarStaysSection({ mobile = false }: SimilarStaysSectionProps) {
+export function SimilarStaysSection({ mobile = false, property }: SimilarStaysSectionProps) {
   const [saved, setSaved] = useState<Set<string>>(new Set());
   function toggleSaved(title: string) {
     setSaved((current) => {
@@ -24,7 +25,7 @@ export function SimilarStaysSection({ mobile = false }: SimilarStaysSectionProps
   return (
     <section className={mobile ? "mt-8" : "mt-8"}>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-[18px] font-bold">Similar stays in Madinaty</h2>
+        <h2 className="text-[18px] font-bold">Similar stays in {property.city}</h2>
         <Link className="text-[14px] font-bold text-[#5A30E8]" href="/search">
           View all
         </Link>
@@ -37,12 +38,12 @@ export function SimilarStaysSection({ mobile = false }: SimilarStaysSectionProps
             : "grid gap-4"
         }
       >
-        {similarStays.map(({ imagePosition, imageSrc, location, price, rating, title }) => (
+        {property.similarStays.map(({ imagePosition, imageSrc, location, price, rating, slug, title }) => (
           <Link
             className={`overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_10px_26px_rgba(15,23,42,0.04)] ${
               mobile ? "w-[260px] shrink-0 snap-start" : "grid grid-cols-[150px_minmax(0,1fr)]"
             }`}
-            href="/stays/luxury-studio-in-madinaty"
+            href={`/stays/${slug}`}
             key={title}
           >
             <div className={mobile ? "relative h-[130px]" : "relative min-h-[132px]"}>

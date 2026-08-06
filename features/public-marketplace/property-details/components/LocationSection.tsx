@@ -1,7 +1,11 @@
-import { nearbyPlaces } from "../data";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { MapPinIcon } from "../icons";
 
-export function LocationSection() {
+type LocationSectionProps = {
+  property: PublicPropertyDetail;
+};
+
+export function LocationSection({ property }: LocationSectionProps) {
   return (
     <section className="mt-5 grid gap-5 xl:grid-cols-[1.25fr_1fr]">
       <div>
@@ -12,22 +16,22 @@ export function LocationSection() {
             <span className="flex size-14 items-center justify-center rounded-full bg-[#6C3DFF] text-white shadow-[0_12px_30px_rgba(108,61,255,0.3)]">
               <MapPinIcon className="size-7" />
             </span>
-            <strong className="mt-1 text-[18px]">B6</strong>
+            <strong className="mt-1 text-[18px]">{property.breadcrumbLabel}</strong>
           </span>
-          <span className="absolute left-[33%] top-5 text-[13px] text-[#64748B]">Madinaty Club</span>
-          <span className="absolute right-9 bottom-6 text-[13px] text-[#64748B]">Madinaty Open Air Mall</span>
+          <span className="absolute left-[33%] top-5 text-[13px] text-[#64748B]">{property.city}</span>
+          <span className="absolute right-9 bottom-6 text-[13px] text-[#64748B]">{property.countryName}</span>
         </div>
       </div>
 
       <div>
         <h2 className="mb-3 text-[18px] font-bold">What&apos;s nearby</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {nearbyPlaces.map(({ distance, icon: Icon, label }) => (
+          {property.highlights.map((label, index) => (
             <article className="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_10px_26px_rgba(15,23,42,0.04)]" key={label}>
-              <Icon className="size-6 text-[#5A30E8]" />
+              <MapPinIcon className="size-6 text-[#5A30E8]" />
               <span>
                 <strong className="block text-[13px]">{label}</strong>
-                <span className="text-[12px] text-[#64748B]">{distance}</span>
+                <span className="text-[12px] text-[#64748B]">{index + 1} km</span>
               </span>
             </article>
           ))}

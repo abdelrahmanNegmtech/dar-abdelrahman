@@ -1,4 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import type {
+  ProfileInsert,
+  ProfileRow,
+  ProfileUpdate,
+  UserAccountType,
+} from "@/lib/supabase/database";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,22 +47,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(errorRedirect);
   }
 
-  const profilePatch: {
-    avatar_url?: string;
-    country_code?: string;
-    country_name?: string;
-    dialing_code?: string;
-    full_name?: string;
-    phone?: string;
-    updated_at: string;
-  } = {
+  const profilePatch: ProfileUpdate = {
     updated_at: new Date().toISOString(),
   };
+  const safeAccountType: UserAccountType =
+    userData.user.user_metadata?.account_type === "owner" ? "owner" : accountType;
+  const safeEmail =
+    userData.user.email ?? `${userData.user.id.toLowerCase()}@placeholder.local`;
 
   const fullName =
     userData.user.user_metadata?.full_name ??
     userData.user.user_metadata?.name ??
     null;
+  const safeFullName =
+    fullName ??
+    userData.user.user_metadata?.display_name ??
+    safeEmail.split("@")[0] ??
+    "Guest";
 
   if (fullName) {
     profilePatch.full_name = fullName;
@@ -82,40 +89,39 @@ export async function GET(request: NextRequest) {
     profilePatch.avatar_url = userData.user.user_metadata.avatar_url;
   }
 
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("id, account_type")
-    .eq("id", userData.user.id)
-    .maybeSingle<{ account_type: "guest" | "owner" | null; id: string }>();
-
   let profileSyncError = null;
-  let profileAccountType = existingProfile?.account_type ?? null;
+  let profileAccountType: ProfileRow["account_type"] | null = null;
+  const profileInsert: ProfileInsert = {
+    ...profilePatch,
+    account_type: safeAccountType,
+    email: safeEmail,
+    full_name: safeFullName,
+    id: userData.user.id,
+  };
+  const { error: bootstrapError } = await supabase
+    .from("profiles")
+    .upsert(profileInsert, { ignoreDuplicates: true, onConflict: "id" });
 
-  if (existingProfile) {
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update(profilePatch)
-      .eq("id", userData.user.id);
-    profileSyncError = updateError;
+  if (bootstrapError) {
+    profileSyncError = bootstrapError;
   } else {
-    const safeAccountType =
-      userData.user.user_metadata?.account_type === "owner" ? "owner" : accountType;
-    const safeEmail =
-      userData.user.email ?? `${userData.user.id.toLowerCase()}@placeholder.local`;
-    const safeFullName =
-      fullName ??
-      userData.user.user_metadata?.display_name ??
-      safeEmail.split("@")[0] ??
-      "Guest";
-    const { error: insertError } = await supabase.from("profiles").insert({
-      ...profilePatch,
-      account_type: safeAccountType,
-      email: safeEmail,
-      full_name: safeFullName,
-      id: userData.user.id,
-    });
-    profileSyncError = insertError;
-    profileAccountType = safeAccountType;
+    const { data: syncedProfile, error: profileReadError } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", userData.user.id)
+      .single();
+
+    if (profileReadError) {
+      profileSyncError = profileReadError;
+    } else {
+      profileAccountType = syncedProfile.account_type;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update(profilePatch)
+        .eq("id", userData.user.id);
+      profileSyncError = updateError;
+    }
   }
 
   if (profileSyncError) {

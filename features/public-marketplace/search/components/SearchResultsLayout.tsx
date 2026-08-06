@@ -1,4 +1,5 @@
 import { SearchMode } from "../data";
+import type { PublicPropertyListResult } from "@/features/properties/data/public-property-queries";
 import { EmptySearchState, SearchErrorState, SearchResultsSkeleton } from "@/features/system-states";
 import { FilterSidebar } from "./FilterSidebar";
 import { MapPanel } from "./MapPanel";
@@ -9,12 +10,14 @@ type SearchResultsLayoutProps = {
   mode: SearchMode;
   onModeChange: (mode: SearchMode) => void;
   onOpenFilters: () => void;
+  results: PublicPropertyListResult;
 };
 
 export function SearchResultsLayout({
   mode,
   onModeChange,
   onOpenFilters,
+  results,
 }: SearchResultsLayoutProps) {
   const statePanel =
     mode === "empty" ? (
@@ -33,15 +36,16 @@ export function SearchResultsLayout({
             mapMode
             onModeChange={onModeChange}
             onOpenFilters={onOpenFilters}
+            results={results}
           />
           <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 min-[1700px]:grid-cols-[260px_minmax(0,1fr)] xl:gap-5">
             <div className="hidden min-[1700px]:block">
               <FilterSidebar compact />
             </div>
-            <PropertyResultsGrid compact />
+            <PropertyResultsGrid compact results={results} />
           </div>
         </div>
-        <MapPanel focused />
+        <MapPanel focused properties={results.items} />
       </section>
     );
   }
@@ -51,11 +55,11 @@ export function SearchResultsLayout({
       <FilterSidebar />
 
       <div className="min-w-0">
-        <ResultsToolbar onModeChange={onModeChange} onOpenFilters={onOpenFilters} />
+        <ResultsToolbar onModeChange={onModeChange} onOpenFilters={onOpenFilters} results={results} />
         <div className="mt-5 grid min-w-0 gap-5 min-[1360px]:grid-cols-[minmax(620px,1fr)_minmax(380px,420px)] 2xl:grid-cols-[minmax(720px,1fr)_minmax(410px,460px)]">
-          <div className="min-w-0">{statePanel ?? <PropertyResultsGrid />}</div>
+          <div className="min-w-0">{statePanel ?? <PropertyResultsGrid results={results} />}</div>
           <aside className="hidden min-w-0 min-[1360px]:block">
-            <MapPanel />
+            <MapPanel properties={results.items} />
           </aside>
         </div>
       </div>

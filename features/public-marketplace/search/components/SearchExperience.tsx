@@ -2,13 +2,22 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { PublicPropertyListResult } from "@/features/properties/data/public-property-queries";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
 import { SearchMode } from "../data";
 import { FiltersModal } from "./SearchFiltersModal";
 import { SearchHeader } from "./SearchHeader";
 import { SearchResultsLayout } from "./SearchResultsLayout";
 
-export function SearchExperience() {
+type SearchExperienceProps = {
+  initialResults: PublicPropertyListResult;
+  loadFailed?: boolean;
+};
+
+export function SearchExperience({
+  initialResults,
+  loadFailed = false,
+}: SearchExperienceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = useMemo<SearchMode>(() => {
@@ -19,6 +28,18 @@ export function SearchExperience() {
     if (view === "map") return "map";
     return "results";
   }, [searchParams]);
+  const resolvedMode = useMemo<SearchMode>(() => {
+    if (initialMode !== "results") {
+      return initialMode;
+    }
+    if (loadFailed) {
+      return "error";
+    }
+    if (!initialResults.items.length) {
+      return "empty";
+    }
+    return initialMode;
+  }, [initialMode, initialResults.items.length, loadFailed]);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -41,9 +62,10 @@ export function SearchExperience() {
     <MarketplaceShell>
       <SearchHeader onOpenFilters={() => setFiltersOpen(true)} />
       <SearchResultsLayout
-        mode={initialMode}
+        mode={resolvedMode}
         onModeChange={handleModeChange}
         onOpenFilters={() => setFiltersOpen(true)}
+        results={initialResults}
       />
       <FiltersModal open={filtersOpen} onClose={() => setFiltersOpen(false)} />
     </MarketplaceShell>

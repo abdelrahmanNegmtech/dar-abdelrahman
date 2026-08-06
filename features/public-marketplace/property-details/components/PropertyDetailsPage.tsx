@@ -1,3 +1,4 @@
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
 import { BookingCard } from "./BookingCard";
 import { HostSummaryBar } from "./HostSummaryBar";
@@ -9,34 +10,38 @@ import { PropertyInfoCards } from "./PropertyInfoCards";
 import { ReviewsSection } from "./ReviewsSection";
 import { SimilarStaysSection } from "./SimilarStaysSection";
 
-export function PropertyDetailsPage() {
+type PropertyDetailsPageProps = {
+  property: PublicPropertyDetail;
+};
+
+export function PropertyDetailsPage({ property }: PropertyDetailsPageProps) {
   return (
     <MarketplaceShell>
       <div className="mx-auto max-w-[1760px] px-5 py-5 sm:px-8 lg:px-11">
-        <PropertyHeader />
+        <PropertyHeader property={property} />
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px]">
           <div className="min-w-0">
-            <PropertyGallery />
-            <HostSummaryBar />
-            <PropertyInfoCards />
-            <ReviewsSection />
-            <LocationSection />
+            <PropertyGallery property={property} />
+            <HostSummaryBar property={property} />
+            <PropertyInfoCards property={property} />
+            <ReviewsSection property={property} />
+            <LocationSection property={property} />
           </div>
 
           <aside className="hidden lg:block">
-            <BookingCard />
-            <SimilarStaysSection />
+            <BookingCard property={property} />
+            <SimilarStaysSection property={property} />
           </aside>
         </div>
 
         <div className="mt-8 lg:hidden">
-          <BookingCard compact />
-          <SimilarStaysSection mobile />
+          <BookingCard compact property={property} />
+          <SimilarStaysSection mobile property={property} />
         </div>
       </div>
 
-      <MobileBookingBar />
+      <MobileBookingBar property={property} />
     </MarketplaceShell>
   );
 }

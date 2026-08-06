@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import type { PublicPropertyListResult } from "@/features/properties/data/public-property-queries";
 import {
   ChevronDownIcon,
   GridIcon,
@@ -16,31 +18,53 @@ type ResultsToolbarProps = {
   mapMode?: boolean;
   onModeChange: (mode: SearchMode) => void;
   onOpenFilters: () => void;
+  results: PublicPropertyListResult;
 };
 
 export function ResultsToolbar({
   mapMode = false,
   onModeChange,
   onOpenFilters,
+  results,
 }: ResultsToolbarProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [smartMatch, setSmartMatch] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortOpen, setSortOpen] = useState(false);
-  const [sort, setSort] = useState("Recommended");
+  const sort = results.sort === "price_asc"
+    ? "Price low to high"
+    : results.sort === "price_desc"
+      ? "Price high to low"
+      : "Recommended";
 
   function changeMode(mode: SearchMode) {
     onModeChange(mode);
   }
+
+  function changeSort(nextSort: "Recommended" | "Price low to high" | "Price high to low") {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextSort === "Recommended") {
+      params.delete("sort");
+    } else {
+      params.set("sort", nextSort === "Price low to high" ? "price_asc" : "price_desc");
+    }
+    params.delete("page");
+    router.push(`/search?${params.toString()}`);
+    setSortOpen(false);
+  }
+
+  const destination = searchParams.get("destination") ?? "All destinations";
 
   return (
     <div>
       <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0 shrink">
           <h1 className="text-[26px] font-bold leading-tight xl:text-[28px]">
-            {mapMode ? "Map search in Madinaty" : "Stays in Madinaty"}
+            {mapMode ? `Map search in ${destination}` : `Stays in ${destination}`}
           </h1>
           <p className="mt-1 flex items-center gap-2 text-[15px] text-[#475569]">
-            128 verified places available
+            {results.totalCount} verified {results.totalCount === 1 ? "place" : "places"} available
             <ShieldIcon className="size-4 text-[#5A30E8]" />
           </p>
         </div>
@@ -111,8 +135,8 @@ export function ResultsToolbar({
             </button>
             {sortOpen ? (
               <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-48 rounded-xl border border-[#E5E7EB] bg-white p-2 shadow-[0_16px_35px_rgba(15,23,42,0.14)]">
-                {["Recommended", "Price low to high", "Top rated"].map((option) => (
-                  <button className="block w-full rounded-lg px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F7F5FF]" key={option} onClick={() => { setSort(option); setSortOpen(false); }} type="button">
+                {["Recommended", "Price low to high", "Price high to low"].map((option) => (
+                  <button className="block w-full rounded-lg px-3 py-2 text-left text-[13px] font-semibold hover:bg-[#F7F5FF]" key={option} onClick={() => changeSort(option as "Recommended" | "Price low to high" | "Price high to low")} type="button">
                     {option}
                   </button>
                 ))}

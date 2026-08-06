@@ -1,9 +1,13 @@
 import Image from "next/image";
 import { marketplaceImages } from "../../assets";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { ShieldIcon } from "../icons";
-import { stayFacts } from "../data";
 
-export function HostSummaryBar() {
+type HostSummaryBarProps = {
+  property: PublicPropertyDetail;
+};
+
+export function HostSummaryBar({ property }: HostSummaryBarProps) {
   return (
     <section className="mt-4 rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
       <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.5fr)_repeat(5,1fr)] lg:items-center lg:divide-x lg:divide-[#E5E7EB]">
@@ -31,12 +35,9 @@ export function HostSummaryBar() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 lg:contents">
-          {stayFacts.map((fact) => {
-            const Icon = fact.icon;
-
+          {property.facts.map((fact) => {
             return (
               <div className="flex items-center gap-3 rounded-lg bg-[#F8FAFC] p-3 lg:justify-center lg:bg-white lg:p-0" key={fact.label}>
-                <Icon className="size-6 text-[#0F172A]" />
                 <span>
                   <strong className="block text-[15px]">{fact.value}</strong>
                   <span className="text-[12px] text-[#475569]">{fact.label}</span>

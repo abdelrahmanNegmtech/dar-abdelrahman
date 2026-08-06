@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRightIcon } from "@/components/ui";
-import { properties } from "../search/data";
+import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
 import { PropertyStayCard } from "./PropertyStayCard";
 
-const stays = properties.slice(0, 4);
+type PopularStaysSectionProps = {
+  stays: PublicPropertyCard[];
+};
 
-export function PopularStaysSection() {
+export function PopularStaysSection({ stays }: PopularStaysSectionProps) {
   const [activeTab, setActiveTab] = useState("Studios & Apartments");
   const [offset, setOffset] = useState(0);
   const visibleStays = useMemo(() => {
     const rotated = [...stays.slice(offset), ...stays.slice(0, offset)];
     return activeTab === "Hotels" ? rotated.slice().reverse() : rotated;
-  }, [activeTab, offset]);
+  }, [activeTab, offset, stays]);
 
   return (
     <section className="bg-white px-5 pb-12 sm:px-8 lg:px-12 xl:px-8 xl:pb-10 2xl:px-9">

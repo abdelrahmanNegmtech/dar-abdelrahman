@@ -1,23 +1,28 @@
 import Image from "next/image";
 import { MapPinIcon, ShieldIcon, StarIcon } from "@/components/ui";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { marketplaceImages } from "../../assets";
 
-export function PropertySummaryCard() {
+type PropertySummaryCardProps = {
+  property: PublicPropertyDetail;
+};
+
+export function PropertySummaryCard({ property }: PropertySummaryCardProps) {
   return (
     <section className="border-b border-[#E5E7EB] pb-7">
-      <h2 className="text-[20px] font-bold text-[#0B1020]">Luxury Studio in Madinaty</h2>
+      <h2 className="text-[20px] font-bold text-[#0B1020]">{property.title}</h2>
       <p className="mt-4 flex items-center gap-2 text-[13px] text-[#64748B]">
         <MapPinIcon className="size-4 text-[#64748B]" />
-        B6, Madinaty, Cairo, Egypt
+        {property.subtitle}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-4 text-[13px] font-semibold">
         <span className="inline-flex items-center gap-1 text-[#1F2937]">
           <StarIcon className="size-5 fill-[#F4B744] text-[#F4B744]" />
-          4.9 <span className="font-normal text-[#64748B]">(32 reviews)</span>
+          {property.rating.toFixed(1)} <span className="font-normal text-[#64748B]">({property.reviewsCount} reviews)</span>
         </span>
         <span className="inline-flex items-center gap-2 text-[#5E2FE5]">
           <ShieldIcon className="size-5 fill-[#5E2FE5]" />
-          Verified property
+          {property.locationPrecisionLabel}
         </span>
       </div>
 
@@ -33,7 +38,11 @@ export function PropertySummaryCard() {
         </div>
       </div>
 
-      <p className="mt-4 text-[14px] leading-6 text-[#64748B]">Real photos reviewed by DAR.</p>
+      <p className="mt-4 text-[14px] leading-6 text-[#64748B]">
+        {property.isUsingFallbackImages
+          ? "Showing DAR fallback gallery imagery because local public photo metadata is not currently exposed."
+          : "Real photos reviewed by DAR."}
+      </p>
     </section>
   );
 }

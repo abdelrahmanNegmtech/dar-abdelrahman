@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { GalleryHighlights } from "./GalleryHighlights";
 import { PropertySummaryCard } from "./PropertySummaryCard";
 import { ReportPhotoCard } from "./ReportPhotoCard";
@@ -9,16 +10,17 @@ type GallerySidebarProps = {
   compact?: boolean;
   onReport: () => void;
   onReserve: () => void;
+  property: PublicPropertyDetail;
 };
 
-export function GallerySidebar({ compact = false, onReport, onReserve }: GallerySidebarProps) {
+export function GallerySidebar({ compact = false, onReport, onReserve, property }: GallerySidebarProps) {
   const content = (
     <>
-      <PropertySummaryCard />
+      <PropertySummaryCard property={property} />
       <div className="grid grid-cols-2 gap-4 py-7">
         <Link
           className="inline-flex h-12 items-center justify-center rounded-lg border border-[#C4B5FD] text-[14px] font-bold text-[#5E2FE5]"
-          href="/stays/luxury-studio-in-madinaty"
+          href={`/stays/${property.slug}`}
         >
           Back to details
         </Link>
@@ -34,14 +36,14 @@ export function GallerySidebar({ compact = false, onReport, onReserve }: Gallery
     return (
       <div className="space-y-3 md:hidden">
         {[
-          ["Property summary", <PropertySummaryCard key="summary" />],
+          ["Property summary", <PropertySummaryCard key="summary" property={property} />],
           [
             "Gallery details",
             <div key="details">
               <div className="grid grid-cols-2 gap-3 pb-5">
                 <Link
                   className="inline-flex h-11 items-center justify-center rounded-lg border border-[#C4B5FD] text-[14px] font-bold text-[#5E2FE5]"
-                  href="/stays/luxury-studio-in-madinaty"
+                  href={`/stays/${property.slug}`}
                 >
                   Back
                 </Link>

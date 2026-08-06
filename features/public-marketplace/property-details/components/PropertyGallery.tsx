@@ -1,9 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { galleryImages } from "../data";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { CalendarIcon } from "../icons";
 
-export function PropertyGallery() {
+type PropertyGalleryProps = {
+  property: PublicPropertyDetail;
+};
+
+export function PropertyGallery({ property }: PropertyGalleryProps) {
+  const galleryImages = property.galleryPhotos;
+
   return (
     <section className="overflow-hidden rounded-xl">
       <div className="hidden h-[315px] grid-cols-[1.1fr_0.9fr] gap-3 md:grid xl:h-[335px]">
@@ -30,10 +36,10 @@ export function PropertyGallery() {
               {index === 3 ? (
                 <Link
                   className="absolute bottom-4 right-4 inline-flex h-10 items-center gap-2 rounded-lg bg-[#0F172A]/90 px-4 text-[14px] font-bold text-white backdrop-blur"
-                  href="/stays/luxury-studio-in-madinaty/gallery"
+                  href={`/stays/${property.slug}/gallery`}
                 >
                   <CalendarIcon className="size-4" />
-                  View all photos (24)
+                  View all photos ({galleryImages.length})
                 </Link>
               ) : null}
             </div>
@@ -51,7 +57,7 @@ export function PropertyGallery() {
           src={galleryImages[0].src}
         />
         <span className="absolute bottom-4 right-4 rounded-full bg-[#0F172A]/90 px-3 py-1.5 text-[12px] font-bold text-white">
-          1 / 24
+          1 / {galleryImages.length}
         </span>
       </div>
     </section>

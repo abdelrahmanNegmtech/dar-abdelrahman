@@ -1,4 +1,16 @@
 import { z } from "zod";
+import type {
+  DbEnum,
+} from "@/lib/supabase/database";
+
+type SupportTicketPriority = DbEnum<"support_ticket_priority">;
+
+const supportTicketPriorities = [
+  "low",
+  "medium",
+  "high",
+  "urgent",
+] as const satisfies readonly SupportTicketPriority[];
 
 export const cancelBookingSchema = z.object({
   bookingId: z.string().min(1),
@@ -85,7 +97,7 @@ export const supportTicketSchema = z.object({
   bookingId: z.string().optional(),
   category: z.string().min(2, "Select a category."),
   message: z.string().trim().min(20, "Please describe the issue in at least 20 characters.").max(2000, "Message must not exceed 2000 characters."),
-  priority: z.enum(["low", "medium", "high", "urgent"]),
+  priority: z.enum(supportTicketPriorities),
   subject: z.string().trim().min(6, "Subject must be at least 6 characters.").max(120, "Subject must not exceed 120 characters."),
 });
 

@@ -20,6 +20,11 @@ All notable changes to this project will be documented in this file.
   development-only login identity, and policy-testing scenarios
 - `supabase/SEEDING.md` documenting the local-only seed reset workflow,
   Docker requirement, and deterministic test identities
+- generated local Supabase database types in
+  `lib/supabase/database.types.ts`
+- typed database aliases in `lib/supabase/database.ts`
+- `lib/supabase/README.md` documenting local type regeneration and typed helper
+  usage
 
 ### Changed
 
@@ -34,3 +39,7 @@ All notable changes to this project will be documented in this file.
   `supabase/tests/storage_rls.sql`
 - corrected seeded storage metadata paths to use bucket-relative object names
   that match the Storage design and Storage policy conventions
+- typed the shared Supabase browser, server, and middleware helpers against the
+  generated local database schema
+- replaced manual inline profile row/update typing in the auth callback and
+  shared Supabase profile helpers with generated database-derived types

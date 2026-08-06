@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import {
   ChevronDownIcon,
   HeartIcon,
@@ -13,11 +14,13 @@ import { marketplaceImages } from "../../assets";
 import { ShareModal, useShareModal } from "../../share";
 import { useFavorites } from "../../favorites/useFavorites";
 
-const PROPERTY_SLUG = "luxury-studio-in-madinaty";
+type PropertyHeaderProps = {
+  property: PublicPropertyDetail;
+};
 
-export function PropertyHeader() {
+export function PropertyHeader({ property }: PropertyHeaderProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(PROPERTY_SLUG);
+  const saved = isFavorite(property.slug);
   const { closeShare, open, openShare, state, triggerRef } = useShareModal();
 
   return (
@@ -25,35 +28,35 @@ export function PropertyHeader() {
       <nav className="mb-3 flex flex-wrap items-center gap-3 text-[13px] font-medium text-[#475569]">
         <Link href="/">Home</Link>
         <ChevronDownIcon className="size-4 -rotate-90 text-[#94A3B8]" />
-        <Link href="/search?destination=Madinaty">Madinaty</Link>
+        <Link href={`/search?destination=${encodeURIComponent(property.city)}`}>{property.city}</Link>
         <ChevronDownIcon className="size-4 -rotate-90 text-[#94A3B8]" />
-        <span className="text-[#0F172A]">Luxury Studio in Madinaty</span>
+        <span className="text-[#0F172A]">{property.title}</span>
       </nav>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-[28px] font-bold leading-tight text-[#0F172A] sm:text-[32px]">
-            Luxury Studio in Madinaty
+            {property.title}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-[#0F172A]">
             <span className="inline-flex items-center gap-2">
               <MapPinIcon className="size-5" />
-              B6, Madinaty, Cairo, Egypt
+              {property.subtitle}
             </span>
             <span className="inline-flex items-center gap-1 font-semibold text-[#5A30E8]">
               <StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />
-              4.9 (32 reviews)
+              {property.rating.toFixed(1)} ({property.reviewsCount} reviews)
             </span>
             <span className="hidden h-4 w-px bg-[#E5E7EB] sm:block" />
             <span className="inline-flex items-center gap-2">
               <ShieldIcon className="size-5 text-[#5A30E8]" />
-              Verified property
+              {property.locationPrecisionLabel}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-[13px] font-bold shadow-[0_8px_20px_rgba(15,23,42,0.04)]" onClick={() => toggleFavorite(PROPERTY_SLUG)} type="button">
+          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-[13px] font-bold shadow-[0_8px_20px_rgba(15,23,42,0.04)]" onClick={() => toggleFavorite(property.slug)} type="button">
             <HeartIcon className={`size-5 ${saved ? "fill-[#5A30E8] text-[#5A30E8]" : ""}`} />
             {saved ? "Saved" : "Save"}
           </button>
@@ -67,12 +70,12 @@ export function PropertyHeader() {
         onClose={closeShare}
         open={open}
         property={{
-          image: marketplaceImages.studio,
-          location: "B6, Madinaty, Cairo, Egypt",
-          price: "EGP 1,200 / night",
-          rating: "4.9 (32)",
-          title: "Luxury Studio in Madinaty",
-          url: "/stays/luxury-studio-in-madinaty",
+          image: property.galleryPhotos[0]?.src ?? marketplaceImages.studio,
+          location: property.subtitle,
+          price: `${property.priceLabel} / night`,
+          rating: `${property.rating.toFixed(1)} (${property.reviewsCount})`,
+          title: property.title,
+          url: `/stays/${property.slug}`,
           verified: true,
         }}
         state={state}
