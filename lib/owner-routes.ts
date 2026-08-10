@@ -1,6 +1,6 @@
 export const ownerRoutes = {
   home: "/owner",
-  dashboard: "/dashboard",
+  dashboard: "/owner/dashboard",
   properties: "/owner/properties",
   propertyDrafts: "/owner/properties/drafts",
   addProperty: "/add-property",
