@@ -33,7 +33,7 @@ const listings = [
 
 const paymentMethods = [
   ["Vodafone Cash", "/pay-vodafone-reference.png", "h-8 w-8", "text-[#ec1b24]"],
-  ["InstaPay", "/pay-instapay-reference.png", "h-[18px] w-[46px]", "text-[#1d2538]"],
+  ["InstaPay", "/brands/instapay-official.png", "h-[18px] w-auto", "text-[#1d2538]"],
   ["Fawry", "/pay-fawry-reference.png", "h-9 w-8", "text-[#1d2538]"],
   ["Meeza", "/pay-meeza-reference.png", "h-8 w-8", "text-[#1d2538]"],
   ["Credit / Debit\nCard", "/pay-card-reference.png", "h-[22px] w-8", "text-[#1d2538]"],
@@ -427,7 +427,7 @@ function PaymentsSection() {
       <p className="mt-2 max-w-[285px] text-[10px] font-medium leading-4 text-[#52607a]">DAR tracks payment status, owner payouts and booking confirmation.</p>
       <div className="mt-3 grid gap-5 lg:grid-cols-[250px_150px]">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {paymentMethods.map(([name, logo, size, color]) => <div className="grid h-[88px] place-items-center rounded-lg border border-[#e4e7ef] bg-white px-2 py-3 text-center text-[8px] font-bold leading-[10px] shadow-[0_10px_24px_rgba(8,18,43,0.025)]" key={name}><span className="flex h-8 items-center justify-center"><Image src={logo} alt="" width={80} height={50} className={`${size} object-contain`} /></span><span className={`whitespace-pre-line ${color}`}>{name}</span></div>)}
+          {paymentMethods.map(([name, logo, size, color]) => <div className="grid h-[88px] place-items-center rounded-lg border border-[#e4e7ef] bg-white px-2 py-3 text-center text-[8px] font-bold leading-[10px] shadow-[0_10px_24px_rgba(8,18,43,0.025)]" key={name}><span className="flex h-8 items-center justify-center"><Image src={logo} alt="" width={name==="InstaPay"?768:80} height={name==="InstaPay"?156:50} className={`${size} object-contain`} /></span><span className={`whitespace-pre-line ${color}`}>{name}</span></div>)}
         </div>
         <div className="h-[188px] rounded-lg border border-[#e4e7ef] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(8,18,43,0.025)]">
           <p className="text-[10px] font-medium leading-3 text-[#52607a]">Next payout</p>
@@ -435,7 +435,7 @@ function PaymentsSection() {
           <p className="mt-0.5 text-[8px] font-medium leading-3 text-[#68728a]">Estimated on Jun 30, 2026</p>
           <p className="mt-5 text-[10px] font-medium leading-3 text-[#52607a]">Payout method</p>
           <div className="mt-2 flex items-center gap-2">
-            <Image src="/pay-instapay-reference.png" alt="" width={24} height={14} className="h-3.5 w-6 object-contain" />
+            <Image src="/brands/instapay-official.png" alt="" width={768} height={156} className="h-3.5 w-auto object-contain" />
             <p className="text-[15px] font-bold leading-5 text-[#292e7f]">InstaPay</p>
           </div>
           <ButtonLink href="#" variant="secondary" className="mt-4 w-full rounded-md px-4 whitespace-nowrap" style={{ height: 32, fontSize: 11, fontWeight: 700, lineHeight: "14px" }}>View payouts</ButtonLink>

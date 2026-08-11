@@ -28,18 +28,6 @@ const defaultPhotos: Photo[] = [
 
 const defaultPhotoNames = new Set(defaultPhotos.map((photo) => photo.name));
 
-const navItems = [
-  ["Dashboard", "home"],
-  ["Properties", "property"],
-  ["Bookings", "calendar"],
-  ["Calendar", "calendar"],
-  ["Messages", "message"],
-  ["Reviews", "message"],
-  ["Analytics", "analytics"],
-  ["Payouts", "wallet"],
-  ["Settings", "settings"],
-] as const;
-
 const tips = [
   ["photo", "Use high-quality images", "Clear, bright photos get more bookings."],
   ["gallery", "Show all important areas", "Include living room, bedroom, kitchen, bathroom and exterior."],
@@ -105,13 +93,8 @@ export default function PhotoUploaderPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fbfcff] text-[#111936]">
+    <div className="min-h-screen bg-[#fbfcff] text-[#111936]">
       <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="owner-input-text hidden" onChange={handleFiles} />
-      <div className="owner-dashboard-frame overflow-hidden">
-        <DesktopSidebar />
-        <section className="owner-dashboard-main">
-          <DesktopTopBar />
-          <MobileTopBar />
           <div className="owner-dashboard-content min-h-[calc(100vh-86px)]">
             <div className="min-w-0">
               <Header progress={progress} count={photos.length} />
@@ -125,107 +108,10 @@ export default function PhotoUploaderPage() {
             </div>
             <MobileActions onSave={saveAndContinue} />
           </div>
-        </section>
-      </div>
-    </main>
+    </div>
   );
 }
 
-function DesktopSidebar() {
-  return (
-    <aside className="flex w-[250px] shrink-0 flex-col border-r border-[#eef1f8] bg-white px-5 py-6 max-[760px]:hidden">
-      <Link href="/dashboard" className="owner-button-text flex h-[50px] items-start">
-        <DarLogo surface="light" alt="DAR" width={126} height={45} className="h-auto w-[126px] object-contain" priority />
-      </Link>
-      <nav className="mt-[48px] space-y-[9px]">
-        {navItems.map(([item, icon]) => (
-          <Link
-            href={item === "Bookings" ? "/owner/bookings/request-decision" : item === "Properties" ? "/owner/properties/new/photos" : "#"}
-            key={item}
-            className={`owner-button-text flex h-12 items-center gap-[13px] rounded-lg px-4 ${item === "Properties" ? "bg-[#f4efff] text-[#6c3bff]" : "text-[#6f7896] hover:bg-[#f8f7ff]"}`}
-          >
-            <SidebarIcon name={icon} className="size-5 shrink-0" />
-            {item}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-auto space-y-4">
-        <button className="owner-button-text flex h-[58px] w-full items-center gap-3 rounded-lg border border-[#e5e9f2] px-4 text-left">
-          <Image src="/dashboard-avatar-omar.png" alt="" width={34} height={34} className="size-[34px] rounded-full object-cover" />
-          <span className="owner-body min-w-0 flex-1">
-            <span className="owner-body block">Ahmed Hassan</span>
-            <span className="owner-body block">Host</span>
-          </span>
-          <Icon name="chevron" className="size-4" />
-        </button>
-        <Link href="#" className="owner-button-text flex h-[48px] items-center gap-3 rounded-lg border border-[#e5e9f2] px-4">
-          <span className="owner-body grid size-5 place-items-center rounded-full border border-[#8790aa]">?</span>
-          Help Center
-        </Link>
-      </div>
-    </aside>
-  );
-}
-
-function SidebarIcon({ name, className = "" }: { name: (typeof navItems)[number][1]; className?: string }) {
-  const common = "currentColor";
-
-  return (
-    <svg aria-hidden="true" className={className} fill="none" stroke={common} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-      {name === "home" ? (
-        <>
-          <path d="M4 11.2 12 4l8 7.2" />
-          <path d="M6.5 10.5V20h11v-9.5" />
-          <path d="M10 20v-5h4v5" />
-        </>
-      ) : null}
-      {name === "property" ? (
-        <>
-          <path d="M4.5 11.2 12 4.5l7.5 6.7" />
-          <path d="M6.5 10.7V20h11v-9.3" />
-          <path d="M9.5 20v-5.5h5V20" />
-          <path d="M9 9.5h2.2" />
-        </>
-      ) : null}
-      {name === "calendar" ? (
-        <>
-          <rect width="15" height="15" x="4.5" y="5.5" rx="2" />
-          <path d="M8 3.8v4" />
-          <path d="M16 3.8v4" />
-          <path d="M4.5 10h15" />
-        </>
-      ) : null}
-      {name === "message" ? (
-        <>
-          <path d="M5 6.5h14v9.2a2 2 0 0 1-2 2H9l-4 3v-12a2 2 0 0 1 2-2Z" />
-        </>
-      ) : null}
-      {name === "analytics" ? (
-        <>
-          <path d="M5 19V13" />
-          <path d="M10 19V8" />
-          <path d="M15 19v-4" />
-          <path d="M20 19V5" />
-          <path d="M4 19h17" />
-          <path d="m6 12 4-4 5 5 4-8" />
-        </>
-      ) : null}
-      {name === "wallet" ? (
-        <>
-          <path d="M4.5 7.5h14.2a1.8 1.8 0 0 1 1.8 1.8v8.4a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 17.7V8.2c0-1.5 1-2.5 2.5-2.5H17" />
-          <path d="M16.5 12h4v4h-4a2 2 0 0 1 0-4Z" />
-          <path d="M8 9h3" />
-        </>
-      ) : null}
-      {name === "settings" ? (
-        <>
-          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-          <path d="M19.4 15a1.8 1.8 0 0 0 .36 2l.05.05a2.15 2.15 0 0 1-3.04 3.04l-.05-.05a1.8 1.8 0 0 0-2-.36 1.8 1.8 0 0 0-1.1 1.65V21.5a2.15 2.15 0 0 1-4.3 0v-.07a1.8 1.8 0 0 0-1.1-1.65 1.8 1.8 0 0 0-2 .36l-.05.05a2.15 2.15 0 0 1-3.04-3.04l.05-.05a1.8 1.8 0 0 0 .36-2 1.8 1.8 0 0 0-1.65-1.1H2.5a2.15 2.15 0 0 1 0-4.3h.07a1.8 1.8 0 0 0 1.65-1.1 1.8 1.8 0 0 0-.36-2l-.05-.05a2.15 2.15 0 0 1 3.04-3.04l.05.05a1.8 1.8 0 0 0 2 .36 1.8 1.8 0 0 0 1.1-1.65V2.5a2.15 2.15 0 0 1 4.3 0v.07a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 2-.36l.05-.05a2.15 2.15 0 0 1 3.04 3.04l-.05.05a1.8 1.8 0 0 0-.36 2 1.8 1.8 0 0 0 1.65 1.1h.07a2.15 2.15 0 0 1 0 4.3h-.07A1.8 1.8 0 0 0 19.4 15Z" />
-        </>
-      ) : null}
-    </svg>
-  );
-}
 
 function DesktopTopBar() {
   return (

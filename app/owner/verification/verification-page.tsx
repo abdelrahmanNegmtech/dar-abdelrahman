@@ -5,16 +5,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BriefcaseBusiness, Building2, Check, CheckCircle, ChevronDown, Clock3, Headphones, Hotel, Info, Landmark, LockKeyhole, UserRound } from "lucide-react";
 import { Icon } from "@/components/host-landing/icons";
-import { Card, OwnerShell } from "@/components/owner/owner-shell";
+import { Card } from "@/components/owner/owner-shell";
 
 import { properties } from "@/lib/dar-data";
 
 type Draft = {
-  ownerType: string; name: string; display: string; nationality: string; phone: string; email: string;
+  ownerType: string; name: string; display: string; nationality: string; dateOfBirth: string; phone: string; email: string;
+  businessName: string; taxId: string; city: string; country: string;
   payout: string; accountHolder: string; instapayAlias: string; iban: string; vodafoneNumber: string;
   compliance: boolean[]; files: Record<string, string>; submitted: boolean;
 };
-const initial: Draft = { ownerType: "Broker / real estate agent", name: "Ahmed Hassan Saeed", display: "Ahmed Hassan", nationality: "Egyptian", phone: "+20 101 234 5678", email: "ahmed.hassan@example.com", payout: "InstaPay", accountHolder: "Ahmed Hassan Saeed", instapayAlias: "ahmed.hassan@instapay", iban: "EGxxxxxxxxxxxxxxxxxxxxxxxx", vodafoneNumber: "+20 101 234 5678", compliance: [true, true, true, true], files: { front: "national-id-front.jpg" }, submitted: false };
+const initial: Draft = { ownerType: "Broker / real estate agent", name: "Ahmed Hassan Saeed", display: "Ahmed Hassan", nationality: "Egyptian", dateOfBirth: "May 15, 1990", phone: "+20 101 234 5678", email: "ahmed.hassan@example.com", businessName: "Hassan Real Estate Solutions", taxId: "123-456-789", city: "Cairo", country: "Egypt", payout: "InstaPay", accountHolder: "Ahmed Hassan Saeed", instapayAlias: "ahmed.hassan@instapay", iban: "EGxxxxxxxxxxxxxxxxxxxxxxxx", vodafoneNumber: "+20 101 234 5678", compliance: [true, true, true, true], files: { front: "national-id-front.jpg" }, submitted: false };
 
 export default function VerificationPage() {
   const [draft, setDraft] = useState(initial);
@@ -34,12 +35,17 @@ export default function VerificationPage() {
   function submit() {
     const missing = ["front", "back", "selfie"].filter((key) => !draft.files[key]);
     if (!draft.name || !draft.email) missing.push("details");
+    if (!isValidDateOfBirth(draft.dateOfBirth)) missing.push("dateOfBirth");
+    if (draft.ownerType !== "Individual owner" && !draft.taxId.trim()) missing.push("taxId");
+    if (!draft.city.trim()) missing.push("city");
+    if (!draft.country.trim()) missing.push("country");
     setErrors(missing);
     if (missing.length) { setToast("Please complete the highlighted requirements."); return; }
     const next = { ...draft, submitted: true }; setDraft(next); localStorage.setItem("dar-owner-verification", JSON.stringify(next)); setToast("Verification submitted successfully.");
   }
   const actions = <><button onClick={() => save()} className="owner-button-text h-10 rounded-md border border-[#cbd2df] px-7">Save draft</button><button onClick={submit} className="owner-button-text h-10 rounded-md bg-[var(--brand)] px-7 text-white">Submit verification</button></>;
-  return <OwnerShell active="Verification" actions={actions} wide fluid>
+  return <>
+    <div className="mx-auto flex w-full max-w-[var(--page-max-width)] justify-end gap-3 px-7 pt-4 max-[900px]:px-4">{actions}</div>
     <div className="owner-dashboard-content">
       <h1 className="owner-page-title">Owner verification</h1><p className="owner-page-description text-[#59637d]">Verify your identity and ownership permissions before your listings go live.</p>
       <Card className="mt-6 grid grid-cols-4 divide-x divide-[#e4e7ee] px-6 py-5 max-[1050px]:grid-cols-2 max-[1050px]:gap-y-6 max-[560px]:grid-cols-1 max-[560px]:divide-x-0">
@@ -85,7 +91,7 @@ export default function VerificationPage() {
           <Card className="p-5"><Title n="6" text="Compliance and policies" sub="Please read and confirm the following."/><div className="owner-helper mt-4 space-y-3">{["I confirm I have permission to list these properties.","I agree to the DAR Owner Terms and Conditions.","I agree to keep prices, availability and property details accurate.","I understand false documents may lead to account suspension."].map((x,i)=><label key={x} className="flex gap-2"><input type="checkbox" checked={draft.compliance[i]} onChange={()=>{const c=[...draft.compliance];c[i]=!c[i];setDraft({...draft,compliance:c})}} className="accent-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-1"/>{i===1?<>I agree to the DAR Owner <Link href="/owner/help-center" className="text-[var(--brand)] transition-colors hover:text-[var(--brand)] hover:underline">Terms and Conditions</Link>.</>:x}</label>)}</div></Card>
         </div>
         <div className="space-y-4">
-          <Card className="p-5"><Title n="2" text="Personal / company details"/><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 max-[560px]:grid-cols-1"><Field label="Full legal name" value={draft.name} onChange={name=>setDraft({...draft,name})}/><Field label="Display name" value={draft.display} onChange={display=>setDraft({...draft,display})}/><Field label="Nationality" value={draft.nationality} onChange={nationality=>setDraft({...draft,nationality})}/><Field label="Date of birth" value="May 15, 1990"/><Field label="Phone number" value={draft.phone} onChange={phone=>setDraft({...draft,phone})}/><Field label="Email address" value={draft.email} onChange={email=>setDraft({...draft,email})}/><Field label="Business name (optional)" value="Hassan Real Estate Solutions"/><Field label="Tax ID / Commercial registration" value="123-456-789"/><Field label="City" value="Cairo"/><Field label="Country" value="Egypt"/></div></Card>
+          <Card className="p-5"><Title n="2" text="Personal / company details"/><div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 max-[560px]:grid-cols-1"><Field label="Full legal name" value={draft.name} onChange={name=>setDraft({...draft,name})}/><Field label="Display name" value={draft.display} onChange={display=>setDraft({...draft,display})}/><Field label="Nationality" value={draft.nationality} onChange={nationality=>setDraft({...draft,nationality})}/><Field label="Date of birth" value={draft.dateOfBirth} onChange={dateOfBirth=>setDraft({...draft,dateOfBirth})} error={errors.includes("dateOfBirth") ? "Enter a valid date of birth." : undefined}/><Field label="Phone number" value={draft.phone} onChange={phone=>setDraft({...draft,phone})}/><Field label="Email address" value={draft.email} onChange={email=>setDraft({...draft,email})}/><Field label="Business name (optional)" value={draft.businessName} onChange={businessName=>setDraft({...draft,businessName})}/><Field label="Tax ID / Commercial registration" value={draft.taxId} onChange={taxId=>setDraft({...draft,taxId})} error={errors.includes("taxId") ? "Tax ID is required for this Owner type." : undefined}/><Field label="City" value={draft.city} onChange={city=>setDraft({...draft,city})} error={errors.includes("city") ? "City is required." : undefined}/><Field label="Country" value={draft.country} onChange={country=>setDraft({...draft,country})} error={errors.includes("country") ? "Country is required." : undefined}/></div></Card>
           <Card className="p-5"><Title n="5" text="Payout method" sub="Choose how you want to receive your payouts."/><PayoutMethodSection draft={draft} setDraft={setDraft}/></Card>
           <Card className="p-5"><Title n="7" text="Verification timeline" sub="Track your verification progress."/><VerificationTimeline/></Card>
         </div>
@@ -119,13 +125,27 @@ export default function VerificationPage() {
       </div>
       <div className="mt-2 flex justify-center gap-4 rounded-lg bg-[#071426] p-4 text-white"><button onClick={()=>save()} className="owner-button-text h-10 w-52 rounded border border-white/40">Save draft</button><button onClick={submit} className="owner-button-text h-10 w-56 rounded bg-[var(--brand)]">Submit verification</button><Link href="/owner/help-center" className="owner-button-text grid h-10 w-52 place-items-center rounded border border-white/40">Contact support</Link></div>
     </div>
-      {toast?<div className="owner-body fixed bottom-5 right-5 z-50 rounded-lg bg-[#10233c] px-5 py-3 text-white shadow-xl">{toast}{draft.submitted?<Link href="/owner/properties/1/publish" className="owner-button-text ml-4 underline">Return to publishing</Link>:null}</div>:null}
-  </OwnerShell>;
+      {toast?<div className="owner-body fixed bottom-5 right-5 z-50 rounded-lg bg-[#10233c] px-5 py-3 text-white shadow-xl"><span className="!text-white">{toast}</span>{draft.submitted?<Link href="/owner/properties/1/publish" className="owner-button-text ml-4 underline">Return to publishing</Link>:null}</div>:null}
+  </>;
 }
 
 function Stat({label,children}:{label:string;children:React.ReactNode}){return <div className="px-5 first:pl-0"><p className="owner-helper mb-2">{label}</p>{children}</div>}
 function Title({n,text,sub}:{n:string;text:string;sub?:string}){return <><b className="owner-card-title">{n}. {text}</b>{sub?<p className="owner-helper text-[#626c84]">{sub}</p>:null}</>}
-function Field({label,value,onChange}:{label:string;value:string;onChange?:(v:string)=>void}){return <label className="owner-label">{label}<input value={value} onChange={e=>onChange?.(e.target.value)} className="owner-input-text mt-1 h-9 w-full rounded border border-[#d9dee8] px-3 outline-none focus:border-[var(--brand)]"/></label>}
+function Field({label,value,onChange,error}:{label:string;value:string;onChange?:(v:string)=>void;error?:string}){return <label className="owner-label">{label}<input value={value} onChange={e=>onChange?.(e.target.value)} aria-invalid={Boolean(error)} className={`owner-input-text mt-1 h-9 w-full rounded border px-3 outline-none focus:border-[var(--brand)] ${error ? "border-[#d84955]" : "border-[#d9dee8]"}`}/>{error?<span className="owner-helper mt-1 block text-[#d84955]">{error}</span>:null}</label>}
+
+function isValidDateOfBirth(value:string) {
+  const normalized = value.trim();
+  const namedDate = normalized.match(/^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/);
+  const isoDate = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const monthNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+  const year = namedDate ? Number(namedDate[3]) : isoDate ? Number(isoDate[1]) : NaN;
+  const month = namedDate ? monthNames.indexOf(namedDate[1].toLowerCase()) : isoDate ? Number(isoDate[2]) - 1 : -1;
+  const day = namedDate ? Number(namedDate[2]) : isoDate ? Number(isoDate[3]) : NaN;
+  if (!Number.isInteger(year) || month < 0 || !Number.isInteger(day)) return false;
+  const date = new Date(year, month, day);
+  const now = new Date();
+  return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day && year >= 1900 && date <= now;
+}
 function OwnerTrustScore() {
   const arc = "M 18 86 A 72 72 0 0 1 162 86";
   return <Card className="p-5">
@@ -168,8 +188,8 @@ function PayoutMethodSection({draft,setDraft}:{draft:Draft;setDraft:(draft:Draft
         const selected=draft.payout===method;
         return <button type="button" key={method} aria-label={method} aria-pressed={selected} onClick={()=>setDraft({...draft,payout:method})} className={`owner-button-text relative flex h-[60px] min-w-0 items-center justify-center gap-3 whitespace-nowrap rounded-md border px-3 outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 ${selected?"border-[var(--brand)] bg-[#faf8ff]":"border-[#e0e4ec] bg-white"}`}>
           {method==="Bank transfer"?<><Landmark aria-hidden="true" size={22} strokeWidth={1.8} className="shrink-0 text-[#11183b]"/><span className="whitespace-nowrap">{method}</span></>:null}
-          {method==="InstaPay"?<Image src="/brands/instapay.svg" alt="InstaPay" width={130} height={36} className="h-8 w-[118px] max-w-[calc(100%-28px)] object-contain"/>:null}
-          {method==="Vodafone Cash"?<><Image src="/brands/vodafone.svg" alt="" width={24} height={24} className="size-6 shrink-0 object-contain"/><span className="whitespace-nowrap">{method}</span></>:null}
+          {method==="InstaPay"?<Image src="/brands/instapay-official.png" alt="InstaPay" width={768} height={156} className="h-7 w-auto object-contain"/>:null}
+          {method==="Vodafone Cash"?<><Image src="/pay-vodafone-reference.png" alt="" width={78} height={76} className="size-7 shrink-0 object-contain"/><span className="whitespace-nowrap">{method}</span></>:null}
           {selected?<span className="absolute right-2 top-2 grid size-[18px] place-items-center rounded-full bg-[var(--brand)] text-white"><Check aria-hidden="true" size={11} strokeWidth={2.4}/></span>:null}
         </button>;
       })}

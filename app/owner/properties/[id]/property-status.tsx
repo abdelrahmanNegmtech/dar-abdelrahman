@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { OwnerShell } from "@/components/owner/owner-shell";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -31,5 +30,5 @@ export default function PropertyStatus({ id }: { id: string }) {
     return () => { active = false; window.clearInterval(interval); };
   }, [id, router]);
 
-  return <OwnerShell active="My Properties"><div className="owner-dashboard-content"><section className="w-full rounded-2xl border border-[#e8ebf3] bg-white p-5 shadow-sm"><span className="owner-badge inline-flex rounded-full bg-[#fff3d7] px-3 py-1">{status === "pending_review" ? "Pending Review" : status.replaceAll("_", " ")}</span><h1 className="owner-page-title mt-5">Modern Apartment in Zamalek</h1><p className="owner-page-description mt-3">Your property has been submitted to DAR and is waiting for review. We will notify you when its status changes.</p><Link href="/owner/properties" className="owner-button-text mt-6 inline-flex h-10 items-center rounded-lg bg-[#5824e6] px-5 text-white">Back to My Properties</Link></section></div></OwnerShell>;
+  return <div className="owner-dashboard-content"><section className="w-full rounded-2xl border border-[#e8ebf3] bg-white p-5 shadow-sm"><span className="owner-badge inline-flex rounded-full bg-[#fff3d7] px-3 py-1">{status === "pending_review" ? "Pending Review" : status.replaceAll("_", " ")}</span><h1 className="owner-page-title mt-5">Modern Apartment in Zamalek</h1><p className="owner-page-description mt-3">Your property has been submitted to DAR and is waiting for review. We will notify you when its status changes.</p><Link href="/owner/properties" className="owner-button-text mt-6 inline-flex h-10 items-center rounded-lg bg-[#5824e6] px-5 text-white">Back to My Properties</Link></section></div>;
 }

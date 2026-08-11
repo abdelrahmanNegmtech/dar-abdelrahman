@@ -53,7 +53,7 @@
 
   /* Spacing / Layout */
   --topbar-height: 5.5rem;
-  --sidebar-width: 13.7rem;
+  --sidebar-width: 14.5rem;
   --sidebar-width-collapsed: 5.5rem;
   --right-panel-width: 23rem;
   --page-max-width: 110rem;
@@ -423,17 +423,24 @@ textarea::placeholder {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #f7f8fb;
+  background: var(--background);
 }
 
 .owner-dashboard-content {
   flex: 1;
-  padding-bottom: 2rem;
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-inline: auto;
+  padding: 1.5rem 1.75rem 2rem;
 }
 
 @media (max-width: 900px) {
   .owner-dashboard-frame {
     flex-direction: column;
+  }
+
+  .owner-dashboard-content {
+    padding: 1.25rem 1rem 5rem;
   }
 }
 
@@ -442,44 +449,44 @@ textarea::placeholder {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.2;
-  color: #0d1735;
+  color: var(--foreground);
   letter-spacing: -0.02em;
 }
 
 .owner-page-description {
   font-size: 0.938rem;
   line-height: 1.5;
-  color: #59637d;
+  color: var(--foreground-muted);
 }
 
 .owner-section-title {
   font-size: 1.063rem;
   font-weight: 600;
-  color: #0d1735;
+  color: var(--foreground);
 }
 
 .owner-card-title {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0d1735;
+  color: var(--foreground);
 }
 
 .owner-label {
   font-size: 0.813rem;
   font-weight: 500;
-  color: #17213d;
+  color: var(--foreground);
 }
 
 .owner-helper {
   font-size: 0.813rem;
   line-height: 1.4;
-  color: #59637d;
+  color: var(--foreground-muted);
 }
 
 .owner-body {
   font-size: 0.875rem;
   line-height: 1.5;
-  color: #17213d;
+  color: var(--foreground);
 }
 
 /* Numbers */
@@ -487,20 +494,20 @@ textarea::placeholder {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #0d1735;
+  color: var(--foreground);
 }
 
 .owner-number-sm {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0d1735;
+  color: var(--foreground);
 }
 
 .owner-number-lg {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #0d1735;
+  color: var(--foreground);
 }
 
 /* Badge */
@@ -513,12 +520,12 @@ textarea::placeholder {
 /* Input */
 .owner-input-text {
   font-size: 0.875rem;
-  color: #17213d;
-  background: #ffffff;
+  color: var(--foreground);
+  background: var(--surface);
 }
 
 .owner-input-text::placeholder {
-  color: #8794b0;
+  color: var(--foreground-subtle);
 }
 
 /* Button text */

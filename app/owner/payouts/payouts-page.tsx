@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CalendarDays, ChartNoAxesColumnIncreasing, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, CircleCheckBig, Clock3, Info, Landmark, Search as SearchIcon, TriangleAlert, WalletCards } from "lucide-react";
 import { Icon } from "@/components/host-landing/icons";
-import { Card, OwnerShell } from "@/components/owner/owner-shell";
+import { Card } from "@/components/owner/owner-shell";
 import { payouts, properties } from "@/lib/dar-data";
 
 const money = (n:number) => `EGP ${n.toLocaleString()}`;
@@ -27,7 +27,7 @@ export default function PayoutsPage(){
   const notify=(x:string)=>{setToast(x);setTimeout(()=>setToast(""),2300)};
   const exportCsv=()=>generateDownload("dar-payouts.csv",["Payout ID,Booking,Property,Net payout,Status",...shown.map(p=>`${p.id},${p.booking},"${p.property}",${p.net},${p.status}`)].join("\n"),"text/csv");
   const actions=<><button onClick={()=>generateDownload("dar-owner-statement.txt","DAR Owner Statement - May 2026")} className="owner-button-text flex h-10 items-center gap-2 rounded border border-[#ccd2dd] px-4"><Icon name="download" className="size-4"/>Download statement</button><button onClick={exportCsv} className="owner-button-text flex h-10 items-center gap-2 rounded border border-[#ccd2dd] px-4"><Icon name="upload" className="size-4"/>Export payouts</button><button onClick={()=>setModal(true)} className="owner-button-text h-10 rounded bg-[var(--brand)] px-5 text-white">Update payout method</button></>;
-  return <OwnerShell active="Payments" wide fluid><div className="owner-dashboard-content">
+  return <><div className="owner-dashboard-content">
     <div className="flex items-start justify-between gap-5 max-[760px]:flex-col">
       <div><h1 className="owner-page-title">Owner payouts</h1><p className="owner-page-description text-[#5d667d]">Track upcoming payouts, payout history, failed transfers and downloadable statements.</p></div>
       <div className="flex flex-wrap justify-end gap-3 max-[760px]:justify-start">{actions}</div>
@@ -145,7 +145,7 @@ export default function PayoutsPage(){
       </div>
       <Selected p={selected} close={()=>setSelected(payouts[0])} modal={()=>setModal(true)} download={()=>generateDownload(`${selected.id}-receipt.txt`,`Receipt ${selected.id}`)}/>
     </div>
-    </div>{modal?<MethodModal value={payMethod} setValue={setPayMethod} close={()=>setModal(false)} save={()=>{setModal(false);notify("Payout method updated.")}}/>:null}{holdReason?<HoldReasonDialog payout={holdReason} close={()=>setHoldReason(null)}/>:null}{toast?<div className="owner-body fixed bottom-5 left-5 z-50 rounded bg-[#10283a] px-5 py-3 text-white">{toast}</div>:null}</OwnerShell>;
+    </div>{modal?<MethodModal value={payMethod} setValue={setPayMethod} close={()=>setModal(false)} save={()=>{setModal(false);notify("Payout method updated.")}}/>:null}{holdReason?<HoldReasonDialog payout={holdReason} close={()=>setHoldReason(null)}/>:null}{toast?<div className="owner-body fixed bottom-5 left-5 z-50 rounded bg-[#10283a] px-5 py-3 text-white">{toast}</div>:null}</>;
 
 }
 type Payout = typeof payouts[number];
@@ -223,7 +223,7 @@ function PayoutHistoryTable({
 }
 
 function PaymentMethod({method}:{method:string}){
-  if(method==="InstaPay") return <Image src="/brands/instapay.svg" alt="InstaPay" width={82} height={22} className="h-[20px] w-[82px] object-contain object-left"/>;
+  if(method==="InstaPay") return <Image src="/brands/instapay-official.png" alt="InstaPay" width={768} height={156} className="h-[20px] w-auto object-contain object-left"/>;
   if(method==="Bank transfer") return <span className="inline-flex items-center gap-2"><Landmark aria-hidden="true" size={16} strokeWidth={1.8} className="shrink-0 text-[#17213d]"/>Bank transfer</span>;
   if(method==="Vodafone Cash") return <span className="inline-flex items-center gap-2"><Image src="/brands/vodafone.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain"/>Vodafone Cash</span>;
   return <span>{method}</span>;

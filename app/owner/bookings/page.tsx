@@ -1,15 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Clock, CheckCircle2, XCircle } from "lucide-react";
-import { Card, OwnerShell } from "@/components/owner/owner-shell";
-
-const bookingsData = [
-  { id: "BK-1001", property: "Modern Apartment in Zamalek", guest: "Omar Khaled", dates: "May 25-28, 2026", total: 8400, status: "Pending" as const },
-  { id: "BK-1002", property: "Modern Apartment in Zamalek", guest: "Sara Ahmed", dates: "Jun 1-5, 2026", total: 12000, status: "Confirmed" as const },
-  { id: "BK-1003", property: "Studio in New Capital", guest: "Lina Mohamed", dates: "May 20-22, 2026", total: 3600, status: "Cancelled" as const },
-  { id: "BK-1004", property: "Luxury Villa in New Cairo", guest: "Khaled Hassan", dates: "Jun 10-17, 2026", total: 59500, status: "Pending" as const },
-  { id: "BK-1005", property: "Serviced Apartment in Maadi", guest: "Nour Ahmed", dates: "May 15-20, 2026", total: 16000, status: "Confirmed" as const },
-  { id: "BK-1006", property: "Modern Apartment in Zamalek", guest: "Mariam Ali", dates: "Jul 1-8, 2026", total: 19600, status: "Pending" as const },
-];
+import { Card } from "@/components/owner/owner-shell";
+import { OwnerBookingStatus, useOwnerBookings, writeOwnerBookings } from "@/lib/owner-bookings";
 
 const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }> = {
   Confirmed: { color: "bg-green-100 text-green-700", icon: CheckCircle2 },
@@ -18,7 +12,18 @@ const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }>
 };
 
 export default function OwnerBookingsPage() {
-  return <OwnerShell active="Booking Requests"><div className="owner-dashboard-content">
+  const bookings = useOwnerBookings();
+
+  function updateStatus(id: string, status: OwnerBookingStatus) {
+    writeOwnerBookings(bookings.map((booking) => booking.id === id ? { ...booking, status } : booking));
+  }
+
+  function declineBooking(id: string) {
+    if (!window.confirm("Decline this booking request?")) return;
+    updateStatus(id, "Cancelled");
+  }
+
+  return <div className="owner-dashboard-content">
         <div className="px-7 pt-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -34,15 +39,15 @@ export default function OwnerBookingsPage() {
         <div className="mt-5 grid grid-cols-3 gap-4 px-7 max-[800px]:grid-cols-1">
           <Card className="p-4">
             <p className="owner-helper text-[#68718a]">Pending Response</p>
-            <b className="owner-number-md mt-1 block text-[#e18a00]">{bookingsData.filter(b => b.status === "Pending").length}</b>
+            <b className="owner-number-md mt-1 block text-[#e18a00]">{bookings.filter(b => b.status === "Pending").length}</b>
           </Card>
           <Card className="p-4">
             <p className="owner-helper text-[#68718a]">Confirmed</p>
-            <b className="owner-number-md mt-1 block text-[#2fa84f]">{bookingsData.filter(b => b.status === "Confirmed").length}</b>
+            <b className="owner-number-md mt-1 block text-[#2fa84f]">{bookings.filter(b => b.status === "Confirmed").length}</b>
           </Card>
           <Card className="p-4">
             <p className="owner-helper text-[#68718a]">Total Bookings</p>
-            <b className="owner-number-md mt-1 block">{bookingsData.length}</b>
+            <b className="owner-number-md mt-1 block">{bookings.length}</b>
           </Card>
         </div>
 
@@ -65,7 +70,7 @@ export default function OwnerBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookingsData.map((booking) => {
+                  {bookings.map((booking) => {
                     const config = statusConfig[booking.status] || statusConfig.Pending;
                     const StatusIcon = config.icon;
                     return (
@@ -92,21 +97,21 @@ export default function OwnerBookingsPage() {
                         <td className="px-4 py-3">
                           {booking.status === "Pending" ? (
                             <div className="flex gap-2">
-                              <button className="owner-button-text rounded-md bg-[var(--brand)] px-3 py-1.5 text-xs text-white transition-colors hover:bg-[var(--brand-strong)]">
+                              <button onClick={() => updateStatus(booking.id, "Confirmed")} className="owner-button-text rounded-md bg-[var(--brand)] px-3 py-1.5 text-xs text-white transition-colors hover:bg-[var(--brand-strong)]">
                                 Approve
                               </button>
-                              <button className="owner-button-text rounded-md border border-[#dce1e9] px-3 py-1.5 text-xs transition-colors hover:bg-[#fff0ef]">
+                              <button onClick={() => declineBooking(booking.id)} className="owner-button-text rounded-md border border-[#dce1e9] px-3 py-1.5 text-xs transition-colors hover:bg-[#fff0ef]">
                                 Decline
                               </button>
                             </div>
-                          ) : (
+                          ) : booking.status === "Confirmed" ? (
                             <Link
                               href="/owner/bookings/request-decision"
                               className="owner-button-text text-xs text-[var(--brand)] hover:underline"
                             >
                               View Details
                             </Link>
-                          )}
+                          ) : null}
                         </td>
                       </tr>
                     );
@@ -116,6 +121,6 @@ export default function OwnerBookingsPage() {
             </div>
           </Card>
       </div>
-    </div></OwnerShell>;
+    </div>;
   
 }

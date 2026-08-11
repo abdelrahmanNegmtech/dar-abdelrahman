@@ -3,23 +3,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Icon } from "@/components/host-landing/icons";
 import { DarLogo } from "@/components/brand/dar-logo";
+import { useOwnerPropertyDraft } from "@/lib/owner-property-draft";
 const photos = ["publish-thumb-1-reference.png", "publish-thumb-2-reference.png", "publish-thumb-3-reference.png"];
 const checklist = ["Basic information", "Location", "Amenities", "Pricing & availability", "Photos", "House rules", "Policies"];
-type PreviewProperty = { title:string; location:string; bedrooms:string; bathrooms:string; guests:string };
-const defaultPreview:PreviewProperty={title:"Modern Apartment in Zamalek",location:"Zamalek, Cairo, Egypt",bedrooms:"2",bathrooms:"2",guests:"4"};
+type PreviewProperty = { title:string; location:string; bedrooms:string; bathrooms:string; guests:string; size:string; nightlyPrice:string };
 
 export default function PublishPropertyPage() {
   const router = useRouter();
+  const draft = useOwnerPropertyDraft();
   const [preference, setPreference] = useState<"now" | "later">("now");
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [property,setProperty]=useState<PreviewProperty>(defaultPreview);
-  useEffect(()=>{let active=true;queueMicrotask(()=>{if(!active)return;try{const saved=localStorage.getItem("dar-owner-property:1");if(saved)setProperty({...defaultPreview,...JSON.parse(saved)});}catch{}});return()=>{active=false}},[]);
+  const property: PreviewProperty = { title: draft.title || "Untitled property", location: draft.address || [draft.neighborhood, draft.city].filter(Boolean).join(", "), bedrooms: draft.bedrooms, bathrooms: draft.bathrooms, guests: draft.guests, size: draft.size, nightlyPrice: draft.nightlyPrice };
 
   async function publish() {
     if (isPublishing) return;
@@ -53,12 +53,7 @@ export default function PublishPropertyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafbfe] text-[#11183b]">
-      <div className="owner-dashboard-frame overflow-hidden">
-        <Sidebar />
-        <section className="owner-dashboard-main">
-          <DesktopTopbar />
-          <MobileTopbar />
+    <div className="min-h-screen bg-[#fafbfe] text-[#11183b]">
           <div className="owner-dashboard-content max-[760px]:pb-24">
             <Link href="/owner/properties/drafts" className="owner-body inline-flex items-center gap-2"><Icon name="arrow-left" className="size-[14px]"/>Back to drafts</Link>
             <div className="mt-4">
@@ -79,41 +74,12 @@ export default function PublishPropertyPage() {
               </aside>
             </div>
           </div>
-        </section>
-      </div>
-      <MobileNav />
       {toast ? <div role="status" className={`owner-body fixed right-5 top-5 z-[60] rounded-lg px-4 py-3 text-white shadow-xl ${toast.type === "success" ? "bg-[#159a51]" : "bg-[#d14343]"}`}>{toast.message}</div> : null}
       {scheduleOpen ? <ScheduleDialog onClose={() => setScheduleOpen(false)} onConfirm={() => { window.localStorage.setItem("dar-property-scheduled", "true"); router.push("/owner/properties"); }} /> : null}
-    </main>
+    </div>
   );
 }
 
-function Sidebar() {
-  const main = [["Dashboard", "dashboard"], ["Properties", "properties"], ["Bookings", "bookings"], ["Messages", "messages"], ["Reviews", "reviews"], ["Payouts", "payouts"], ["Profile settings", "settings"]] as const;
-  return <aside className="w-[205px] shrink-0 border-r border-[#eff1f7] px-[18px] py-[16px] max-[760px]:hidden">
-    <DarLogo surface="light" alt="DAR Find Your Perfect Stay" width={610} height={260} className="h-auto w-[105px] object-contain object-left" priority />
-    <nav className="owner-body mt-[18px] text-[#505a82]">{main.map(([label, icon], i) => <div key={label}>
-      <Link href={label === "Bookings" ? "/owner/bookings/request-decision" : "/owner/properties"} className={`owner-button-text flex h-[38px] items-center gap-[13px] rounded-lg px-[8px] ${i === 1 ? "font-bold text-[#242b54]" : "font-medium"}`}><SidebarIcon name={icon} />{label}{label === "Properties" ? <SidebarIcon name="chevron" className="ml-auto size-[13px]" /> : null}{label === "Messages" ? <b className="owner-label ml-auto grid size-[17px] place-items-center rounded-[4px] bg-[#5824e6] text-white">2</b> : null}</Link>
-      {i === 1 ? <div className="ml-[41px] space-y-[2px]"><Link className="owner-body block py-[8px]" href="/owner/properties">My properties</Link><Link className="owner-body block py-[8px]" href="/add-property">Add new property</Link><Link className="owner-body flex py-[8px]" href="/owner/properties/drafts">Drafts <b className="owner-label ml-auto mr-[3px] grid size-[17px] place-items-center rounded-[4px] border border-[#8e6aff]">4</b></Link></div> : null}
-    </div>)}</nav>
-    <div className="owner-body mt-[25px] h-[194px] overflow-hidden rounded-[8px] bg-[#f6f1ff] px-[14px] pt-[14px]"><b className="owner-label">List more, earn more</b><p className="owner-body mt-[4px]">Complete your property and<br />start welcoming guests.</p><Link href="/add-property" className="owner-button-text mt-[10px] grid h-[34px] place-items-center rounded-[5px] border border-[#9c7cff] bg-white">Finish property</Link><div className="relative mx-auto mt-[4px] h-[69px] w-[132px]"><Image src="/finish-property-illustration.png" alt="" fill sizes="132px" className="object-contain" /></div></div>
-    <div className="owner-body mt-[28px] h-[119px] rounded-[8px] bg-[#fbfbfe] px-[14px] pt-[14px]"><b>Need help?</b><p className="owner-body mt-[3px]">Our support team is here<br />24/7 to help you.</p><button className="owner-button-text mt-[9px] flex h-[34px] w-full items-center justify-center gap-[8px] rounded-[5px] border border-[#9c7cff]"><SidebarIcon name="support" className="size-[15px]" />Contact support</button></div>
-  </aside>;
-}
-
-function SidebarIcon({ name, className = "size-[17px]" }: { name: "dashboard" | "properties" | "bookings" | "messages" | "reviews" | "payouts" | "settings" | "support" | "chevron"; className?: string }) {
-  return <svg aria-hidden="true" className={`shrink-0 text-[#626c9b] ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {name === "dashboard" && <><path d="m4 11 8-7 8 7"/><path d="M6.5 9.5V20h11V9.5"/><path d="M9.5 20v-6h5v6"/></>}
-    {name === "properties" && <><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M5.5 9v11h13V9"/><path d="M8 20v-8h8v8"/><path d="M10 12V9h4v3"/></>}
-    {name === "bookings" && <><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17"/><path d="M7 14h3M7 17h3"/></>}
-    {name === "messages" && <path d="M4 5.5h16v11H9l-5 3v-14Z"/>}
-    {name === "reviews" && <path d="m12 3.5 2.55 5.16 5.7.83-4.13 4.02.98 5.68L12 17.5l-5.1 2.69.98-5.68-4.13-4.02 5.7-.83L12 3.5Z"/>}
-    {name === "payouts" && <><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M3.5 10h17M7 15h3"/></>}
-    {name === "settings" && <><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L0 10.5v3l2 .7c.16.6.4 1.17.7 1.7l-.9 1.9 2.1 2.1 1.9-.9c.53.3 1.1.54 1.7.7l.7 2h3l.7-2c.6-.16 1.17-.4 1.7-.7l1.9.9 2.1-2.1-.9-1.9c.3-.53.54-1.1.7-1.7l2-.7Z" transform="translate(2.5 0) scale(.78)"/></>}
-    {name === "support" && <><path d="M5 13v-2a7 7 0 0 1 14 0v2"/><path d="M5 12H3.5A1.5 1.5 0 0 0 2 13.5v3A1.5 1.5 0 0 0 3.5 18H6v-6H5ZM19 12h1.5a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5H18v-6h1ZM18 18c0 2-1.5 3-4 3h-1"/><circle cx="11.5" cy="21" r="1"/></>}
-    {name === "chevron" && <path d="m8 10 4 4 4-4"/>}
-  </svg>;
-}
 
 function DesktopTopbar() { return <header className="flex h-[62px] items-center justify-end border-b border-[#f0f1f6] pr-[29px] max-[760px]:hidden"><div className="flex h-full items-center text-[#11183b]"><span className="owner-body relative grid size-[22px] place-items-center"><Icon name="bell" className="size-[19px]" strokeWidth="1.8" /><b className="owner-label absolute -right-[3px] -top-[5px] grid size-[15px] place-items-center rounded-full bg-[#ef3945] text-white">3</b></span><Image src="/publish-avatar-ahmed-reference.svg" alt="Ahmed H." width={32} height={32} className="ml-[23px] size-[32px] rounded-full object-cover" /><span className="owner-body ml-[10px]">Ahmed H.</span><Icon name="chevron" className="ml-[9px] size-[12px]" strokeWidth="1.8" /></div></header>; }
 function MobileTopbar() { return <header className="hidden h-[72px] items-center justify-between border-b border-[#eef0f6] px-5 max-[760px]:flex"><Icon name="menu" className="size-[19px]"/><DarLogo surface="light" alt="DAR" width={82} height={30} className="h-auto w-[82px] object-contain" priority /><span className="owner-body relative"><Icon name="bell" className="size-[19px]"/><b className="owner-label absolute -right-2 -top-1 grid size-4 place-items-center rounded-full bg-[#ef3945] text-white">3</b></span></header>; }
@@ -122,10 +88,10 @@ function Card({ children, className = "" }: { children: React.ReactNode; classNa
 
 function PropertySummary({property}:{property:PreviewProperty}) { return <Card className="flex min-h-[172px] gap-[20px] p-[14px] max-[760px]:gap-3 max-[760px]:p-3">
   <div className="relative h-[119px] w-[170px] shrink-0 overflow-hidden rounded-[7px] max-[760px]:h-[105px] max-[760px]:w-[122px]"><Image src="/publish-summary-reference.png" alt="Apartment living room" fill className="object-cover object-center" sizes="170px" /></div>
-  <div className="flex min-w-0 flex-1 flex-col"><h2 className="owner-section-title">{property.title}</h2><p className="owner-body mt-[9px] flex items-center gap-[6px]"><PropertyIcon name="location" className="size-[14px]" />{property.location}</p><div className="owner-body mt-[21px] flex flex-wrap gap-x-[24px] gap-y-2 text-[#4f597b] max-[760px]:mt-2 max-[760px]:gap-x-4"><Detail icon="bed">{property.bedrooms} Beds</Detail><Detail icon="bath">{property.bathrooms} Baths</Detail><Detail icon="guests">{property.guests} Guests</Detail><Detail icon="area">120 m²</Detail></div><p className="owner-body mt-[16px] max-[760px]:hidden">Last updated: 18 May 2025, 10:30 AM</p><Link href="/owner/properties/1/edit?tab=basic" className="owner-button-text mt-auto ml-auto flex h-[34px] min-w-[126px] items-center justify-center gap-[8px] rounded-[5px] border border-[#8a61ff] max-[760px]:mt-3 max-[760px]:w-full">Edit property <PropertyIcon name="edit" className="size-[14px]" /></Link></div>
+  <div className="flex min-w-0 flex-1 flex-col"><h2 className="owner-section-title">{property.title}</h2><p className="owner-body mt-[9px] flex items-center gap-[6px]"><PropertyIcon name="location" className="size-[14px]" />{property.location}</p><div className="owner-body mt-[21px] flex flex-wrap gap-x-[24px] gap-y-2 text-[#4f597b] max-[760px]:mt-2 max-[760px]:gap-x-4"><Detail icon="bed">{property.bedrooms} Beds</Detail><Detail icon="bath">{property.bathrooms} Baths</Detail><Detail icon="guests">{property.guests} Guests</Detail><Detail icon="area">{property.size} m²</Detail></div><p className="owner-body mt-[16px] max-[760px]:hidden">Saved locally for Owner review</p><Link href="/owner/properties/new/details" className="owner-button-text mt-auto ml-auto flex h-[34px] min-w-[126px] items-center justify-center gap-[8px] rounded-[5px] border border-[#8a61ff] max-[760px]:mt-3 max-[760px]:w-full">Edit property <PropertyIcon name="edit" className="size-[14px]" /></Link></div>
   </Card>; }
 
-function ListingPreview({property}:{property:PreviewProperty}) { return <Card className="p-[14px] max-[760px]:hidden"><h2 className="owner-section-title">Preview your listing</h2><div className="mt-[11px] grid h-[181px] grid-cols-[minmax(0,1fr)_93px] gap-[10px]"><div className="relative overflow-hidden rounded-[7px]"><Image src="/publish-preview-reference.png" alt="Apartment listing preview" fill className="object-cover object-center" sizes="520px" /><span className="owner-badge absolute left-[7px] top-[7px] rounded-[4px] bg-[#5824e6] px-[9px] py-[4px] text-white">Preview</span></div><div className="grid grid-rows-3 gap-[6px]">{photos.map((p, i) => <div className="relative overflow-hidden rounded-[6px]" key={p}><Image src={`/${p}`} alt="" fill className="object-cover object-center" sizes="93px" />{i === 2 ? <span className="owner-body absolute inset-0 grid place-items-center bg-black/40 text-white">+12</span> : null}</div>)}</div></div><div className="mt-[10px] flex items-end justify-between"><div><h3 className="owner-card-title">{property.title}</h3><p className="owner-body mt-[5px] flex items-center gap-[5px]"><PropertyIcon name="location" className="size-[12px]" />{property.location}</p><div className="owner-body mt-[11px] flex gap-[22px] text-[#4f597b]"><Detail icon="bed">{property.bedrooms} Beds</Detail><Detail icon="bath">{property.bathrooms} Baths</Detail><Detail icon="guests">{property.guests} Guests</Detail><Detail icon="area">120 m²</Detail></div></div><div className="pb-[1px] text-right"><b className="owner-label">EGP 2,500</b><span className="owner-body"> / night</span><p className="owner-body mt-[8px] flex items-center justify-end gap-[4px]"><PropertyIcon name="star" className="size-[13px] fill-current" />4.8 <span className="owner-body">(120 reviews)</span></p></div></div></Card>; }
+function ListingPreview({property}:{property:PreviewProperty}) { return <Card className="p-[14px] max-[760px]:hidden"><h2 className="owner-section-title">Preview your listing</h2><div className="mt-[11px] grid h-[181px] grid-cols-[minmax(0,1fr)_93px] gap-[10px]"><div className="relative overflow-hidden rounded-[7px]"><Image src="/publish-preview-reference.png" alt="Apartment listing preview" fill className="object-cover object-center" sizes="520px" /><span className="owner-badge absolute left-[7px] top-[7px] rounded-[4px] bg-[#5824e6] px-[9px] py-[4px] text-white">Preview</span></div><div className="grid grid-rows-3 gap-[6px]">{photos.map((p, i) => <div className="relative overflow-hidden rounded-[6px]" key={p}><Image src={`/${p}`} alt="" fill className="object-cover object-center" sizes="93px" />{i === 2 ? <span className="owner-body absolute inset-0 grid place-items-center bg-black/40 text-white">+12</span> : null}</div>)}</div></div><div className="mt-[10px] flex items-end justify-between"><div><h3 className="owner-card-title">{property.title}</h3><p className="owner-body mt-[5px] flex items-center gap-[5px]"><PropertyIcon name="location" className="size-[12px]" />{property.location}</p><div className="owner-body mt-[11px] flex gap-[22px] text-[#4f597b]"><Detail icon="bed">{property.bedrooms} Beds</Detail><Detail icon="bath">{property.bathrooms} Baths</Detail><Detail icon="guests">{property.guests} Guests</Detail><Detail icon="area">{property.size} m²</Detail></div></div><div className="pb-[1px] text-right"><b className="owner-label">EGP {Number(property.nightlyPrice || 0).toLocaleString()}</b><span className="owner-body"> / night</span><p className="owner-body mt-[8px] flex items-center justify-end gap-[4px]"><PropertyIcon name="star" className="size-[13px] fill-current" />New listing</p></div></div></Card>; }
 
 function Preference({ value, onChange }: { value: "now" | "later"; onChange: (v: "now" | "later") => void }) { return <Card className="p-[12px] max-[760px]:hidden"><h2 className="owner-section-title">Set your publish preference</h2><div className="mt-[10px] grid grid-cols-2 gap-[10px]"><Choice active={value === "now"} onClick={() => onChange("now")} icon="publish" title="Publish now" note="Your property will go live immediately."/><Choice active={value === "later"} onClick={() => onChange("later")} icon="calendar" title="Schedule for later" note="Choose a date and time to publish."/></div></Card>; }
 function Choice({ active, onClick, icon, title, note }: { active:boolean; onClick:()=>void; icon:"publish"|"calendar"; title:string; note:string }) { return <button onClick={onClick} className={`owner-button-text flex h-[66px] items-center gap-[12px] rounded-[6px] border px-[12px] text-left ${active ? "border-[#8d68ff] bg-[#fbf9ff]" : "border-[#e7eaf2] bg-white"}`}><span className={`owner-badge size-[15px] shrink-0 rounded-full border-[1.5px] ${active ? "border-[#6938f0] bg-[#6938f0] shadow-[inset_0_0_0_3.5px_white]" : "border-[#aeb9d0]"}`} /><span className="owner-badge grid size-[32px] shrink-0 place-items-center rounded-full bg-[#f1ecff]"><PropertyIcon name={icon} className="size-[16px]" /></span><span><b className="owner-button-text block">{title}</b><small className="owner-helper mt-[5px] block">{note}</small></span></button>; }
@@ -192,5 +158,4 @@ function SafetyBar({ saved, isPublishing, onSave, onPublish }: { saved:boolean; 
   </div>;
 }
 
-function MobileNav() { return <nav className="owner-body fixed inset-x-0 bottom-0 z-30 hidden h-[72px] items-center justify-around border-t border-[#eceef5] bg-white text-center text-[#566080] max-[760px]:flex"><span><Icon name="home" className="mx-auto size-[18px]"/><small className="owner-helper mt-1 block">Dashboard</small></span><Link href="/owner/bookings/request-decision"><Icon name="calendar" className="mx-auto size-[18px]"/><small className="owner-helper mt-1 block">Bookings</small></Link><Link href="/add-property" className="owner-button-text grid size-11 place-items-center rounded-full bg-[#5824e6] text-white">+</Link><span><Icon name="message" className="mx-auto size-[18px]"/><small className="owner-helper mt-1 block">Messages</small></span><span><Icon name="user-plain" className="mx-auto size-[18px]"/><small className="owner-helper mt-1 block">Profile</small></span></nav>; }
 function ScheduleDialog({ onClose, onConfirm }: { onClose:()=>void; onConfirm:()=>void }) { return <div className="fixed inset-0 z-50 grid place-items-center bg-[#11152d]/35 p-4" onMouseDown={onClose}><div className="w-full max-w-[420px] rounded-xl bg-white p-6 shadow-2xl" onMouseDown={e=>e.stopPropagation()}><div className="flex justify-between"><h2 className="owner-section-title">Schedule publication</h2><button onClick={onClose} aria-label="Close"><Icon name="x" className="size-[16px]"/></button></div><p className="owner-body mt-2">Choose when your property should go live.</p><label className="owner-label mt-5 block">Publish date and time<input type="datetime-local" className="owner-input-text mt-2 h-11 w-full rounded-md border border-[#dce1ec] px-3" /></label><div className="mt-6 flex gap-3"><button onClick={onClose} className="owner-button-text h-10 flex-1 rounded-md border border-[#a183fa]">Cancel</button><button onClick={onConfirm} className="owner-button-text h-10 flex-1 rounded-md bg-[#5824e6] text-white">Schedule</button></div></div></div>; }
