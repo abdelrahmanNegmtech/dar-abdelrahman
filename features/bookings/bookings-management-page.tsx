@@ -41,7 +41,7 @@ import {
 } from "@/features/design-system";
 
 import { bookingsManagementData } from "./data/bookings-management.data";
-import type { BookingMetric, BookingRecord, BookingStatus } from "./types";
+import type { BookingMetric, BookingRecord, BookingStatus, BookingsPageData } from "./types";
 
 const METRIC_ICONS = {
   calendar: CalendarDays,
@@ -166,7 +166,7 @@ function PartyCard({
   party,
 }: {
   title: string;
-  party: NonNullable<(typeof bookingsManagementData.details)[string]>["guest"];
+  party: NonNullable<BookingsPageData["details"][string]>["guest"];
 }) {
   return (
     <Card variant="summary" padding="md" className="space-y-3 rounded-[0.95rem]">
@@ -195,24 +195,28 @@ function PartyCard({
   );
 }
 
-export function BookingsManagementPage() {
+export function BookingsManagementPage({
+  pageData = bookingsManagementData,
+}: {
+  pageData?: BookingsPageData;
+}) {
   const [search, setSearch] = useState("");
   const [bookingStatus, setBookingStatus] = useState("all");
   const [paymentStatus, setPaymentStatus] = useState("all");
   const [propertyType, setPropertyType] = useState("all");
   const [city, setCity] = useState("all");
-  const [dateRange, setDateRange] = useState(bookingsManagementData.filters.checkInDate[0]?.value ?? "");
+  const [dateRange, setDateRange] = useState(pageData.filters.checkInDate[0]?.value ?? "");
   const [risk, setRisk] = useState("all");
-  const [activeTab, setActiveTab] = useState<(typeof bookingsManagementData.tabs)[number]["value"]>("all");
-  const [selectedBookingId, setSelectedBookingId] = useState(bookingsManagementData.selectedBookingId);
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([bookingsManagementData.selectedBookingId]);
+  const [activeTab, setActiveTab] = useState<BookingsPageData["tabs"][number]["value"]>("all");
+  const [selectedBookingId, setSelectedBookingId] = useState(pageData.selectedBookingId);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([pageData.selectedBookingId]);
   const [rowsPerPage, setRowsPerPage] = useState("5");
   const [adminNotes, setAdminNotes] = useState("");
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return bookingsManagementData.bookings.filter((booking) => {
+    return pageData.bookings.filter((booking) => {
       const matchesSearch =
         !normalizedSearch ||
         [
@@ -241,12 +245,12 @@ export function BookingsManagementPage() {
         Boolean(dateRange)
       );
     });
-  }, [activeTab, bookingStatus, city, dateRange, paymentStatus, propertyType, risk, search]);
+  }, [activeTab, bookingStatus, city, dateRange, pageData.bookings, paymentStatus, propertyType, risk, search]);
 
   const visibleRows = filteredRows.slice(0, Number(rowsPerPage));
   const selectedBooking =
-    bookingsManagementData.details[selectedBookingId] ??
-    bookingsManagementData.details[bookingsManagementData.selectedBookingId];
+    pageData.details[selectedBookingId] ??
+    pageData.details[pageData.selectedBookingId];
   const allVisibleSelected =
     visibleRows.length > 0 && visibleRows.every((row) => selectedRowIds.includes(row.id));
 
@@ -273,7 +277,7 @@ export function BookingsManagementPage() {
     setPaymentStatus("all");
     setPropertyType("all");
     setCity("all");
-    setDateRange(bookingsManagementData.filters.checkInDate[0]?.value ?? "");
+    setDateRange(pageData.filters.checkInDate[0]?.value ?? "");
     setRisk("all");
     setActiveTab("all");
   }
@@ -284,7 +288,7 @@ export function BookingsManagementPage() {
       sidebar={
         <Sidebar
           brand={<AdminBrand />}
-          groups={bookingsManagementData.sidebarGroups}
+          groups={pageData.sidebarGroups}
           footer={<SidebarSupportCard />}
           theme="dark"
         />
@@ -295,7 +299,7 @@ export function BookingsManagementPage() {
         <BookingsHeader />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
-          {bookingsManagementData.metrics.map((metric) => {
+          {pageData.metrics.map((metric) => {
             const Icon = METRIC_ICONS[metric.icon];
 
             return (
@@ -334,7 +338,7 @@ export function BookingsManagementPage() {
                   aria-label="Booking status"
                   value={bookingStatus}
                   onChange={(event) => setBookingStatus(event.target.value)}
-                  options={bookingsManagementData.filters.bookingStatus}
+                  options={pageData.filters.bookingStatus}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
                 <Select
@@ -342,7 +346,7 @@ export function BookingsManagementPage() {
                   aria-label="Payment status"
                   value={paymentStatus}
                   onChange={(event) => setPaymentStatus(event.target.value)}
-                  options={bookingsManagementData.filters.paymentStatus}
+                  options={pageData.filters.paymentStatus}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
                 <Select
@@ -350,7 +354,7 @@ export function BookingsManagementPage() {
                   aria-label="Property type"
                   value={propertyType}
                   onChange={(event) => setPropertyType(event.target.value)}
-                  options={bookingsManagementData.filters.propertyType}
+                  options={pageData.filters.propertyType}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
                 <Select
@@ -358,7 +362,7 @@ export function BookingsManagementPage() {
                   aria-label="City"
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
-                  options={bookingsManagementData.filters.city}
+                  options={pageData.filters.city}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
                 <Select
@@ -366,7 +370,7 @@ export function BookingsManagementPage() {
                   aria-label="Check-in date"
                   value={dateRange}
                   onChange={(event) => setDateRange(event.target.value)}
-                  options={bookingsManagementData.filters.checkInDate}
+                  options={pageData.filters.checkInDate}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
                 <Select
@@ -374,7 +378,7 @@ export function BookingsManagementPage() {
                   aria-label="Risk level"
                   value={risk}
                   onChange={(event) => setRisk(event.target.value)}
-                  options={bookingsManagementData.filters.riskLevel}
+                  options={pageData.filters.riskLevel}
                   className="h-10 rounded-[0.65rem] text-[12px]"
                 />
               </div>
@@ -394,7 +398,7 @@ export function BookingsManagementPage() {
                 </h2>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border pb-2">
-                  {bookingsManagementData.tabs.map((tab) => {
+                  {pageData.tabs.map((tab) => {
                     const active = tab.value === activeTab;
 
                     return (
@@ -548,7 +552,7 @@ export function BookingsManagementPage() {
                         aria-label="Rows per page"
                         value={rowsPerPage}
                         onChange={(event) => setRowsPerPage(event.target.value)}
-                        options={bookingsManagementData.filters.rowsPerPage}
+                        options={pageData.filters.rowsPerPage}
                         className="h-8 rounded-[0.55rem] text-[11px]"
                       />
                     </div>

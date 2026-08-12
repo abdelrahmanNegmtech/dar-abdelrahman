@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import { AdminSidebar } from "@/features/sidebar";
+import { requireAdmin } from "@/lib/supabase/auth";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  await requireAdmin();
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <AdminSidebar />

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AdminBrand, AppShell, PageContainer, Sidebar, SidebarSupportCard } from "@/features/design-system";
 
 import { reportsAnalyticsData } from "./data/reports-analytics.data";
-import type { ReportsFilters } from "./types";
+import type { ReportsFilters, ReportsPageData } from "./types";
 import { AiInsightsCard } from "./components/ai-insights-card";
 import { BookingFunnelCard } from "./components/booking-funnel-card";
 import { CityPerformanceCard } from "./components/city-performance-card";
@@ -24,7 +24,7 @@ import { SavedReportsCard } from "./components/saved-reports-card";
 import { ScheduleReportCard } from "./components/schedule-report-card";
 import { TopPropertiesReportCard } from "./components/top-properties-report-card";
 
-export function ReportsAnalyticsPage() {
+export function ReportsAnalyticsPage({ pageData = reportsAnalyticsData }: { pageData?: ReportsPageData }) {
   const [filters, setFilters] = useState<ReportsFilters>({
     range: "30",
     city: "all",
@@ -44,7 +44,7 @@ export function ReportsAnalyticsPage() {
       sidebar={
         <Sidebar
           brand={<AdminBrand />}
-          groups={reportsAnalyticsData.sidebarGroups}
+          groups={pageData.sidebarGroups}
           footer={<SidebarSupportCard />}
           theme="dark"
         />
@@ -55,27 +55,27 @@ export function ReportsAnalyticsPage() {
         <FiltersToolbar
           filters={filters}
           onChange={updateFilter}
-          options={reportsAnalyticsData.filterOptions}
+          options={pageData.filterOptions}
         />
 
-        <ReportsMetrics metrics={reportsAnalyticsData.metrics} />
+        <ReportsMetrics metrics={pageData.metrics} />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
           <div className="min-w-0 space-y-4">
             <div className="grid gap-4 xl:grid-cols-[1.22fr_0.95fr_1.08fr]">
-              <RevenueCommissionChart points={reportsAnalyticsData.revenueTrend} />
-              <BookingFunnelCard steps={reportsAnalyticsData.funnel} />
-              <CityPerformanceCard rows={reportsAnalyticsData.cityPerformance} />
+              <RevenueCommissionChart points={pageData.revenueTrend} />
+              <BookingFunnelCard steps={pageData.funnel} />
+              <CityPerformanceCard rows={pageData.cityPerformance} />
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr_1.22fr]">
-              <PropertyTypeBreakdownCard items={reportsAnalyticsData.propertyTypeBreakdown} />
-              <PaymentMethodsCard rows={reportsAnalyticsData.paymentMethods} />
-              <TopPropertiesReportCard rows={reportsAnalyticsData.topProperties} />
+              <PropertyTypeBreakdownCard items={pageData.propertyTypeBreakdown} />
+              <PaymentMethodsCard rows={pageData.paymentMethods} />
+              <TopPropertiesReportCard rows={pageData.topProperties} />
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.25fr_1.05fr_0.95fr_0.95fr]">
-              <OwnerPerformanceCard rows={reportsAnalyticsData.ownerPerformance} />
+              <OwnerPerformanceCard rows={pageData.ownerPerformance} />
               <OperationalHealthCard />
               <ReviewsQualityCard />
               <AiInsightsCard />
@@ -87,9 +87,9 @@ export function ReportsAnalyticsPage() {
           </div>
 
           <div className="min-w-0 space-y-4">
-            <SavedReportsCard rows={reportsAnalyticsData.savedReports} />
+            <SavedReportsCard rows={pageData.savedReports} />
             <ScheduleReportCard />
-            <QuickAnalyticsLinksCard links={reportsAnalyticsData.quickLinks} />
+            <QuickAnalyticsLinksCard links={pageData.quickLinks} />
             <DataFreshnessCard />
           </div>
         </div>

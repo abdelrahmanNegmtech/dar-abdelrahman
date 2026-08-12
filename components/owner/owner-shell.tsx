@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { DarLogo } from "@/components/brand/dar-logo";
 import { Icon } from "@/components/host-landing/icons";
@@ -20,6 +21,38 @@ const nav = [
 ] as const;
 
 export function OwnerShell({ active, children, actions }: { active: string; children: ReactNode; actions?: ReactNode; wide?: boolean; fluid?: boolean }) {
+  const [notificationsUnread, setNotificationsUnread] = useState(2);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadUnreadCount() {
+      try {
+        const response = await fetch("/api/notifications/unread-count", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = await response.json() as { unreadCount?: unknown };
+        if (isActive && typeof payload.unreadCount === "number") {
+          setNotificationsUnread(payload.unreadCount);
+        }
+      } catch {
+        // Keep the existing fallback badge value when local notification data is unavailable.
+      }
+    }
+
+    void loadUnreadCount();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#f7f8fb] text-[#0d1735]">
       <div className="owner-dashboard-frame">
@@ -48,7 +81,14 @@ export function OwnerShell({ active, children, actions }: { active: string; chil
           <header className="flex h-[72px] items-center justify-between border-b border-[#e7eaf1] px-7 max-[700px]:h-[62px] max-[700px]:px-4">
             <DarLogo surface="light" width={610} height={260} className="hidden h-9 w-24 object-contain max-[900px]:block" />
             <div className="ml-auto flex items-center gap-5">
-              <span className="relative"><Icon name="bell" className="size-5" /><b className="owner-badge absolute -right-2 -top-2 grid size-4 place-items-center rounded-full bg-[#5522d9] text-white">2</b></span>
+              <span className="relative">
+                <Icon name="bell" className="size-5" />
+                {notificationsUnread ? (
+                  <b className="owner-badge absolute -right-2 -top-2 grid size-4 place-items-center rounded-full bg-[#5522d9] text-white">
+                    {notificationsUnread}
+                  </b>
+                ) : null}
+              </span>
               <span className="owner-label flex items-center gap-2 max-[620px]:hidden"><Icon name="globe" className="size-5" />English / EGP<Icon name="chevron" className="size-3" /></span>
               <ProfileAvatar src="/owner-selfie-ahmed-reference.png" name="Ahmed Hassan" size={34}/>
             </div>

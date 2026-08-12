@@ -208,6 +208,15 @@ function CreateTicketForm({ bookings }: { bookings: TravelerBooking[] }) {
   const showUrgentWarning = priorityValue === "urgent";
 
   function onSubmit(values: SupportTicketFormValues) {
+    if (files.length) {
+      showToast({
+        description: "Support attachment uploads are not connected in Phase 16 yet.",
+        title: "Attachments are deferred",
+        type: "info",
+      });
+      return;
+    }
+
     const parsed = supportTicketSchema.safeParse(values);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {

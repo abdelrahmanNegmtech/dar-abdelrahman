@@ -200,7 +200,7 @@ function ConfirmDialog({
             onClick={onConfirm}
             type="button"
           >
-            Delete
+            Remove
           </button>
         </div>
       </div>
@@ -637,7 +637,7 @@ function ReviewCard({
                   Booking
                 </SecondaryButton>
               </Link>
-              <Link href={`/stays/${review.property.id}`}>
+              <Link href={`/stays/${review.propertySlug ?? review.property.id}`}>
                 <SecondaryButton className="min-h-9 px-4 text-xs">
                   <ExternalLink className="size-3.5" />
                   Property
@@ -822,7 +822,7 @@ export function ReviewsPage({
   }
 
   function handleViewProperty(review: TravelerReview) {
-    window.open(`/stays/${review.property.id}`, "_self");
+    window.open(`/stays/${review.propertySlug ?? review.property.id}`, "_self");
   }
 
   function confirmDelete() {
@@ -833,7 +833,7 @@ export function ReviewsPage({
       const result = await deleteReview({ reviewId });
       showToast({
         description: result.message,
-        title: result.ok ? "Review deleted" : "Could not delete",
+        title: result.ok ? "Review removed" : "Could not remove",
         type: result.ok ? "success" : "error",
       });
     });
@@ -1097,11 +1097,11 @@ export function ReviewsPage({
           <Card className="p-5">
             <h2 className="text-lg font-black text-dar-navy">Review rules</h2>
             <div className="mt-4 space-y-3 text-sm font-semibold text-dar-muted">
-              {[
-                "Only verified guests can leave a review.",
-                "Reviews are published after moderation.",
+              {[ 
+                "Only guests with a completed DAR booking can leave a review.",
+                "You can edit or remove only your own active review.",
                 "Be respectful and helpful to other guests.",
-                "Reviews cannot be edited after 14 days.",
+                "Owner responses are shown when they have been published.",
               ].map((rule) => (
                 <p className="flex gap-2" key={rule}>
                   <ThumbsUp className="mt-0.5 size-4 shrink-0 text-dar-primary" />
@@ -1123,10 +1123,10 @@ export function ReviewsPage({
       ) : null}
       {deletingReview ? (
         <ConfirmDialog
-          message="This review will be permanently deleted. This cannot be undone."
+          message="This review will be removed from your visible history."
           onCancel={() => setDeletingReview(null)}
           onConfirm={confirmDelete}
-          title="Delete review?"
+          title="Remove review?"
         />
       ) : null}
     </div>

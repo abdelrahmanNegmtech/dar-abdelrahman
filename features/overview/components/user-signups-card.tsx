@@ -4,6 +4,8 @@ import type { SignupSegment } from "../types";
 import { DonutChart } from "./donut-chart";
 
 export function UserSignupsCard({ segments }: { segments: SignupSegment[] }) {
+  const totalLabel = segments.reduce((sum, segment) => sum + segment.value, 0).toLocaleString("en-US");
+
   return (
     <Card padding="md" className="space-y-4 rounded-[0.85rem] border-border/85 shadow-[0_4px_14px_rgba(16,25,58,0.035)]">
       <div className="flex items-center justify-between gap-3">
@@ -15,7 +17,7 @@ export function UserSignupsCard({ segments }: { segments: SignupSegment[] }) {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(220px,1fr)_minmax(230px,1fr)] xl:items-center">
         <div className="flex justify-center xl:justify-start">
-          <DonutChart segments={segments} totalLabel="12,458" />
+          <DonutChart segments={segments} totalLabel={totalLabel} />
         </div>
 
         <div className="w-full space-y-3">

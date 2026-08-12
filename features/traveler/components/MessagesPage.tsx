@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   CalendarDays,
@@ -30,7 +31,8 @@ import { Card, EmptyState, IconButton, PageHeader, PrimaryButton, SearchInput, S
 import { useUnreadMessages } from "./TravelerLayout";
 import { formatCurrency } from "../utils";
 
-type FilterOption = "all" | "owners" | "support" | "unread";
+type FilterOption = "all" | "owners" | "support" | "travelers" | "unread";
+type ViewerRole = "traveler" | "owner";
 
 // ---------- helpers ----------
 
@@ -325,6 +327,7 @@ function MessageBubble({
     setShowConfirm(false);
     await deleteConversationMessage({ messageId: message.id });
     showToast({ description: "Message deleted.", title: "Deleted", type: "success" });
+    window.location.reload();
   }
 
   function handleReply() {
@@ -379,7 +382,7 @@ function MessageBubble({
                       message.isOwn ? "border-white/25 bg-white/12" : "border-dar-border bg-white",
                     )}
                   >
-                    {message.attachment.type === "image" ? (
+                    {message.attachment.type === "image" && message.attachment.url ? (
                       <div className="relative h-40">
                         <Image
                           alt={message.attachment.name}
@@ -390,18 +393,13 @@ function MessageBubble({
                         />
                       </div>
                     ) : (
-                      <a
-                        className="flex items-center justify-between p-3 text-xs"
-                        href={message.attachment.url}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
+                      <div className="flex items-center justify-between p-3 text-xs">
                         <span className="min-w-0">
                           <span className="block truncate font-black">{message.attachment.name}</span>
                           <span className="mt-0.5 block opacity-80">{message.attachment.size}</span>
                         </span>
                         <FileText className="ml-3 size-5 shrink-0" />
-                      </a>
+                      </div>
                     )}
                   </div>
                 ) : null}
@@ -464,10 +462,13 @@ function MessageBubble({
 export function MessagesPage({
   conversations: initialConversations,
   selectedConversation: initialSelected,
+  viewerRole = "traveler",
 }: {
   conversations: TravelerConversation[];
   selectedConversation: TravelerConversation | null;
+  viewerRole?: ViewerRole;
 }) {
+  const router = useRouter();
   const initialActiveId = initialSelected?.id ?? initialConversations[0]?.id ?? "";
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterOption>("all");
@@ -488,6 +489,10 @@ export function MessagesPage({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { setUnreadMessages } = useUnreadMessages();
   const { showToast } = useToast();
+  const participantFilterLabel = viewerRole === "owner" ? "travelers" : "owners";
+  const filterOptions = viewerRole === "owner"
+    ? (["all", "travelers", "unread"] as const)
+    : (["all", "owners", "support", "unread"] as const);
 
   const activeConversation = conversations.find((c) => c.id === activeId);
 
@@ -504,6 +509,7 @@ export function MessagesPage({
       const filterMatch =
         filter === "all" ||
         (filter === "owners" && conversation.participant.role === "owner") ||
+        (filter === "travelers" && conversation.participant.role === "traveler") ||
         (filter === "support" && conversation.participant.role === "support") ||
         (filter === "unread" && conversation.unreadCount > 0);
 
@@ -527,6 +533,9 @@ export function MessagesPage({
   }, [visibleConversations]);
 
   function selectConversation(conversationId: string) {
+    const selected = conversations.find((conversation) => conversation.id === conversationId);
+    const lastVisibleMessage = selected?.messages.filter((message) => !message.isDeleted).at(-1);
+
     setActiveId(conversationId);
     setConversations((prev) =>
       prev.map((conversation) =>
@@ -536,7 +545,11 @@ export function MessagesPage({
       ),
     );
     startTransition(async () => {
-      await markConversationRead({ conversationId });
+      await markConversationRead({
+        conversationId,
+        lastReadMessageId: lastVisibleMessage?.id,
+      });
+      router.refresh();
     });
   }
 
@@ -593,7 +606,7 @@ export function MessagesPage({
       isDeleted: false,
       isOwn: true,
       messageType: "text",
-      senderAvatarUrl: "/assets/images/backgrounds/Nighttime_photo.jpeg",
+      senderAvatarUrl: activeConversation?.participant.avatarUrl ?? "/assets/images/backgrounds/Nighttime_photo.jpeg",
       senderId: "me",
       senderName: "You",
       status: "sending",
@@ -612,6 +625,7 @@ export function MessagesPage({
           m.id === forwarded.id ? { ...m, status: "sent" as MessageStatus } : m,
         ),
       }));
+      router.refresh();
     }, 800);
 
     setShowForward(null);
@@ -654,6 +668,7 @@ export function MessagesPage({
       const result = await sendConversationMessage({
         conversationId: activeConversation.id,
         message: messageBody.trim(),
+        replyToMessageId: replyTo?.id,
       });
 
       // Update optimistic message with real status
@@ -675,7 +690,10 @@ export function MessagesPage({
           title: "Message failed",
           type: "error",
         });
+        return;
       }
+
+      router.refresh();
     });
   }
 
@@ -714,7 +732,7 @@ export function MessagesPage({
           <div className="border-b border-dar-border p-4">
             <SearchInput onChange={setQuery} placeholder="Search conversations" value={query} />
             <div className="mt-4 flex gap-2 overflow-x-auto">
-              {(["all", "owners", "support", "unread"] as const).map((item) => (
+              {filterOptions.map((item) => (
                 <button
                   className={cx(
                     "shrink-0 rounded-lg px-3 py-2 text-xs font-black capitalize transition",
@@ -724,7 +742,7 @@ export function MessagesPage({
                   onClick={() => setFilter(item)}
                   type="button"
                 >
-                  {item}
+                  {item === "owners" ? participantFilterLabel : item}
                   {item === "unread" && conversations.some((c) => c.unreadCount > 0)
                     ? ` (${conversations.reduce((t, c) => t + c.unreadCount, 0)})`
                     : null}
@@ -849,7 +867,13 @@ export function MessagesPage({
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link href={`/traveler/bookings/${activeConversation.bookingId}`}>
+                <Link
+                  href={
+                    viewerRole === "owner"
+                      ? `/owner/bookings/request-decision?bookingId=${activeConversation.bookingId}`
+                      : `/traveler/bookings/${activeConversation.bookingId}`
+                  }
+                >
                   <SecondaryButton className="min-h-10 text-xs">
                     <CalendarDays className="size-4" />
                     View booking
@@ -1050,12 +1074,9 @@ export function MessagesPage({
                   messages
                     .filter((m) => m.attachment && !m.isDeleted)
                     .map((message) => (
-                      <a
-                        className="flex items-center justify-between rounded-xl border border-dar-border p-3 transition hover:border-dar-primary"
-                        href={message.attachment!.url}
+                      <div
+                        className="flex items-center justify-between rounded-xl border border-dar-border p-3"
                         key={message.id}
-                        rel="noopener noreferrer"
-                        target="_blank"
                       >
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-black text-dar-navy">
@@ -1066,7 +1087,7 @@ export function MessagesPage({
                           </span>
                         </span>
                         <FileText className="ml-3 size-4 shrink-0 text-dar-primary" />
-                      </a>
+                      </div>
                     ))
                 )}
               </div>
@@ -1075,16 +1096,16 @@ export function MessagesPage({
             <Card className="p-5">
               <h2 className="text-lg font-black text-dar-navy">Safety and support</h2>
               <div className="mt-4 grid gap-3">
-                <Link href="/traveler/support">
+                <Link href={viewerRole === "owner" ? "/owner/help-center" : "/traveler/support"}>
                   <SecondaryButton className="w-full">
                     <Headphones className="size-4" />
-                    Contact DAR support
+                    {viewerRole === "owner" ? "Owner help center" : "Contact DAR support"}
                   </SecondaryButton>
                 </Link>
-                <Link href="/traveler/support?tab=open">
+                <Link href={viewerRole === "owner" ? "/owner/help-center" : "/traveler/support?tab=open"}>
                   <SecondaryButton className="w-full border-red-200 text-red-600 hover:bg-red-50">
                     <ShieldAlert className="size-4" />
-                    Report issue
+                    {viewerRole === "owner" ? "Get support" : "Report issue"}
                   </SecondaryButton>
                 </Link>
               </div>

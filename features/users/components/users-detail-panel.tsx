@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 import { ArrowRight, Headphones, Shield, Star, UserRoundCheck } from "lucide-react";
 
@@ -12,6 +13,7 @@ import {
   Separator,
   Textarea,
 } from "@/features/design-system";
+import { reviewOwnerVerificationAction, setProfileActiveAction } from "@/features/admin/actions";
 
 import type { UserRecord, UserSummaryCard } from "../types";
 
@@ -142,7 +144,45 @@ export function UsersDetailPanel({
     linkedTickets: UserSummaryCard;
   };
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const latestAuditItem = user.auditLog[user.auditLog.length - 1];
+
+  function runVerificationAction(status: "approved" | "rejected") {
+    if (!user.verificationId) {
+      setActionMessage("No owner verification is available for this account.");
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await reviewOwnerVerificationAction({
+        notes: adminNote,
+        reason: status === "rejected" ? "manual_review_required" : undefined,
+        status,
+        verificationId: user.verificationId!,
+      });
+
+      setActionMessage(result.message);
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
+
+  function runProfileStateAction(active: boolean) {
+    startTransition(async () => {
+      const result = await setProfileActiveAction({
+        active,
+        profileId: user.id,
+      });
+
+      setActionMessage(result.message);
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
 
   return (
     <div className="space-y-2.5">
@@ -201,13 +241,21 @@ export function UsersDetailPanel({
                 Admin actions
               </h4>
               <div className="grid grid-cols-2 gap-2.5">
-                <Button variant="primary" size="sm" className={actionButtonClassName}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className={actionButtonClassName}
+                  onClick={() => runVerificationAction("approved")}
+                  disabled={isPending || !user.verificationId}
+                >
                   Approve owner
                 </Button>
                 <Button
                   variant="warning-outline"
                   size="sm"
                   className={`${actionButtonClassName} !border-[#F59E0B] !text-[#B66F00] hover:!border-[#F59E0B] hover:!bg-[rgba(245,158,11,0.08)]`}
+                  onClick={() => runVerificationAction("rejected")}
+                  disabled={isPending || !user.verificationId}
                 >
                   Request documents
                 </Button>
@@ -215,11 +263,13 @@ export function UsersDetailPanel({
                   variant="danger-outline"
                   size="sm"
                   className={`${actionButtonClassName} !border-[#EF4444] !text-[#EF4444] hover:!border-[#EF4444] hover:!bg-[rgba(239,68,68,0.08)]`}
+                  onClick={() => runProfileStateAction(false)}
+                  disabled={isPending || user.isActive === false}
                 >
                   Suspend account
                 </Button>
-                <Button variant="outline" size="sm" className={actionButtonClassName}>
-                  Reset password
+                <Button variant="outline" size="sm" className={actionButtonClassName} disabled>
+                  Reset password (Deferred)
                 </Button>
               </div>
             </div>
@@ -238,7 +288,7 @@ export function UsersDetailPanel({
               {latestAuditItem?.timestamp ? (
                 <div className="text-xs leading-5 text-foreground-muted">
                   <p>Last updated by Admin Team</p>
-                  <p>{latestAuditItem.timestamp}</p>
+                  <p>{actionMessage ?? latestAuditItem.timestamp}</p>
                 </div>
               ) : null}
             </div>

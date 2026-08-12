@@ -1,6 +1,6 @@
 import type { ChecklistItemData, RiskLevel, SidebarGroup, StatusVariant, TimelineItemData } from "@/features/design-system";
 
-export type UserRole = "guest" | "owner" | "broker" | "hotel" | "admin";
+export type UserRole = "guest" | "owner" | "admin" | "support_staff" | "broker" | "hotel";
 
 export type UserCategory =
   | "all"
@@ -9,6 +9,7 @@ export type UserCategory =
   | "brokers"
   | "hotels"
   | "admins"
+  | "support"
   | "suspended"
   | "pending";
 
@@ -56,10 +57,12 @@ export type UserRecord = {
   rating: string;
   listingCount: number;
   bookingRequests: number;
+  isActive?: boolean;
   roleBadgeLabel?: string;
   statusVariant: StatusVariant;
   checklist: ChecklistItemData[];
   auditLog: TimelineItemData[];
+  verificationId?: string | null;
 };
 
 export type UserFilters = {

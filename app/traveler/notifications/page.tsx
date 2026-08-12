@@ -5,13 +5,17 @@ import { getNotificationsData } from "@/features/traveler/data/queries";
 export default async function TravelerNotificationsRoute({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ filter?: string }>;
 }) {
   const params = await searchParams;
-  const data = await getNotificationsData(params.type);
+  const data = await getNotificationsData(params.filter);
+  const pageKey = data.notifications
+    .map((notification) => `${notification.id}:${notification.isRead ? "read" : "unread"}`)
+    .join("|");
+
   return (
     <Suspense fallback={null}>
-      <NotificationsPage {...data} />
+      <NotificationsPage key={pageKey} {...data} />
     </Suspense>
   );
 }

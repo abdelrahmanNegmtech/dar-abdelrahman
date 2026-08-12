@@ -20,10 +20,16 @@ export const cancelBookingSchema = z.object({
 export const messageSchema = z.object({
   conversationId: z.string().min(1),
   message: z.string().trim().min(1, "Write a message before sending.").max(1200),
+  replyToMessageId: z.string().uuid().optional(),
 });
 
 export const notificationSchema = z.object({
   notificationId: z.string().min(1),
+});
+
+export const conversationReadSchema = z.object({
+  conversationId: z.string().uuid(),
+  lastReadMessageId: z.string().uuid().optional(),
 });
 
 export const reviewSchema = z.object({

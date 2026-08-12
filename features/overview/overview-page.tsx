@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AdminBrand, AppShell, PageContainer, Sidebar, SidebarSupportCard } from "@/features/design-system";
 
 import { overviewPageData } from "./data/overview.data";
+import type { OverviewPageData } from "./types";
 import { OverviewCharts } from "./components/overview-charts";
 import { OverviewHeader } from "./components/overview-header";
 import { OverviewMetricGrid } from "./components/overview-metric-grid";
@@ -13,10 +14,10 @@ import { SystemHealthCard } from "./components/system-health-card";
 import { TopPropertiesCard } from "./components/top-properties-card";
 import { UserSignupsCard } from "./components/user-signups-card";
 
-export function OverviewPage() {
+export function OverviewPage({ pageData = overviewPageData }: { pageData?: OverviewPageData }) {
   const [searchValue, setSearchValue] = useState("");
-  const [dateRange, setDateRange] = useState(overviewPageData.dateRanges[0]?.value ?? "");
-  const [currency, setCurrency] = useState(overviewPageData.currencyOptions[0]?.value ?? "egp");
+  const [dateRange, setDateRange] = useState(pageData.dateRanges[0]?.value ?? "");
+  const [currency, setCurrency] = useState(pageData.currencyOptions[0]?.value ?? "egp");
 
   return (
     <AppShell
@@ -24,7 +25,7 @@ export function OverviewPage() {
       sidebar={
         <Sidebar
           brand={<AdminBrand />}
-          groups={overviewPageData.sidebarGroups}
+          groups={pageData.sidebarGroups}
           footer={<SidebarSupportCard />}
           theme="dark"
         />
@@ -35,32 +36,32 @@ export function OverviewPage() {
           onSearchChange={setSearchValue}
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
-          dateRanges={overviewPageData.dateRanges}
-          quickActions={overviewPageData.quickActions}
+          dateRanges={pageData.dateRanges}
+          quickActions={pageData.quickActions}
         />
       }
     >
       <PageContainer className="space-y-4">
-        <OverviewMetricGrid metrics={overviewPageData.metrics} />
+        <OverviewMetricGrid metrics={pageData.metrics} />
 
         <OverviewCharts
-          bookingPoints={overviewPageData.bookingOverview.points}
-          bookingTotal={overviewPageData.bookingOverview.totalLabel}
-          bookingComparison={overviewPageData.bookingOverview.comparisonValue}
-          revenuePoints={overviewPageData.revenueOverview.points}
-          revenueTotal={overviewPageData.revenueOverview.totalLabel}
-          revenueComparison={overviewPageData.revenueOverview.comparisonValue}
+          bookingPoints={pageData.bookingOverview.points}
+          bookingTotal={pageData.bookingOverview.totalLabel}
+          bookingComparison={pageData.bookingOverview.comparisonValue}
+          revenuePoints={pageData.revenueOverview.points}
+          revenueTotal={pageData.revenueOverview.totalLabel}
+          revenueComparison={pageData.revenueOverview.comparisonValue}
           currency={currency}
           onCurrencyChange={setCurrency}
         />
 
         <section className="grid gap-4 xl:grid-cols-[1.05fr_0.88fr_0.9fr]">
-          <RecentBookingsCard items={overviewPageData.recentBookings} />
-          <TopPropertiesCard items={overviewPageData.topProperties} />
-          <UserSignupsCard segments={overviewPageData.signupSegments} />
+          <RecentBookingsCard items={pageData.recentBookings} />
+          <TopPropertiesCard items={pageData.topProperties} />
+          <UserSignupsCard segments={pageData.signupSegments} />
         </section>
 
-        <SystemHealthCard items={overviewPageData.systemStatus} />
+        <SystemHealthCard items={pageData.systemStatus} />
       </PageContainer>
     </AppShell>
   );

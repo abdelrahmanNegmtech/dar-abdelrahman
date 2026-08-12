@@ -63,6 +63,7 @@ stack.
 | other_booking | `90000000-0000-4000-8000-000000000002` | guest_two on owner_two_property |
 | pending_booking | `90000000-0000-4000-8000-000000000003` | guest_one awaiting owner_two approval |
 | cancelled_booking | `90000000-0000-4000-8000-000000000004` | guest_two cancelled before approval |
+| reviewable_completed_booking | `90000000-0000-4000-8000-000000000005` | guest_two completed stay on public_property without a seeded review |
 
 ### Conversations
 
@@ -82,7 +83,12 @@ stack.
 
 | Fixture | UUID | Notes |
 | --- | --- | --- |
-| payout_completed_booking | `97000000-0000-4000-8000-000000000001` | Paid payout linked to completed_booking |
+| payout_completed_booking | `97000000-0000-4000-8000-000000000001` | Owner one paid payout linked to completed_booking |
+| payout_scheduled_booking | `97000000-0000-4000-8000-000000000002` | Owner one scheduled payout linked to reviewable_completed_booking |
+| payout_pending_owner_one | `97000000-0000-4000-8000-000000000003` | Owner one pending payout with no booking link |
+| payout_failed_owner_one | `97000000-0000-4000-8000-000000000004` | Owner one failed payout fixture |
+| payout_on_hold_owner_one | `97000000-0000-4000-8000-000000000005` | Owner one on-hold payout fixture |
+| payout_scheduled_owner_two | `97000000-0000-4000-8000-000000000006` | Owner two scheduled payout for cross-owner denial tests |
 
 ### Reviews
 
@@ -97,13 +103,15 @@ stack.
 - Cross-guest access denial: `guest_one` vs `guest_two`
 - Cross-owner access denial: `owner_one` vs `owner_two`
 - Completed booking and review flow: `completed_booking`
+- Review creation flow: `reviewable_completed_booking`
 - Future confirmed booking flow: `other_booking`
 - Pending owner approval flow: `pending_booking`
 - Cancellation flow: `cancelled_booking`
 - Owner verification approved and under-review states
 - Message membership and attachment-path scenarios
 - Support ticket access for opener, support, and unrelated users
-- Payout visibility and admin/support differentiation
+- Seeded support internal-note isolation on `ticket_owner`
+- Payout visibility, owner-only aggregates, status coverage, and admin/support differentiation
 
 ## Storage Metadata Coverage
 

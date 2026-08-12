@@ -339,7 +339,11 @@ async function getPublicReviewsByPropertyIds(propertyIds: string[]) {
       "id, property_id, rating, comment, status, submitted_at, created_at, cleanliness_rating, accuracy_rating, communication_rating, location_rating, value_rating",
     )
     .in("property_id", propertyIds)
-    .eq("status", "submitted");
+    .eq("status", "submitted")
+    .is("hidden_at", null)
+    .is("removed_at", null)
+    .order("submitted_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
 
   if (error) {
     throw new Error("Unable to load public property reviews.");

@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
+import { cancelTravelerBookingAction } from "@/features/bookings/actions";
+import {
+  addSupportTicketMessage,
+  createSupportTicketRecord,
+  updateOwnSupportTicketStatus,
+} from "@/features/support/data/support-ticket-mutations";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import type { DbEnum } from "@/lib/supabase/database";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +16,7 @@ import { z } from "zod";
 import type { ActionResult } from "./types";
 import {
   cancelBookingSchema,
+  conversationReadSchema,
   deleteReviewSchema,
   editReviewSchema,
   messageSchema,
@@ -41,12 +48,12 @@ type ActionUser = {
 };
 
 type SupportTicketCategory = DbEnum<"support_ticket_category">;
-type SupportSenderRole = DbEnum<"support_sender_role">;
 
 const supportTicketCategoryMap: Record<string, SupportTicketCategory> = {
   "Account": "account_issue",
   "Booking help": "booking_issue",
   "Check-in / access": "property_issue",
+  "Other": "other",
   "Payments": "payment_issue",
   "Property issue": "property_issue",
   "Refunds": "refund_request",
@@ -68,6 +75,30 @@ function fail(message: string): ActionResult {
 
 function getProfileUpdateErrorMessage() {
   return "We could not save your profile changes right now. Please try again.";
+}
+
+function getReviewActionErrorMessage() {
+  return "We could not update that review right now. Please try again.";
+}
+
+async function getPropertySlugForReviewRevalidation(propertyId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("properties")
+    .select("public_slug")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  return data?.public_slug ?? null;
+}
+
+function revalidateReviewPropertyRoutes(propertySlug: string | null) {
+  if (!propertySlug) {
+    return;
+  }
+
+  revalidatePath(`/stays/${propertySlug}`);
+  revalidatePath(`/properties/${propertySlug}`);
 }
 
 async function getActionUser(): Promise<ActionUser | null> {
@@ -169,30 +200,31 @@ export async function cancelBooking(input: unknown): Promise<ActionResult> {
   }
 
   if (supabase) {
-    const { error } = await supabase
-      .from("bookings")
-      .update({
-        cancellation_reason: parsed.data.reason,
-        status: "cancelled",
-      })
-      .eq("id", parsed.data.bookingId)
-      .eq("traveler_id", user.id);
+    const result = await cancelTravelerBookingAction({
+      bookingId: parsed.data.bookingId,
+      reason: parsed.data.reason,
+    });
 
-    if (error) return fail(error.message);
+    if (!result.ok) {
+      return fail(result.message);
+    }
   }
 
+  revalidatePath("/bookings");
   revalidatePath("/traveler/bookings");
   revalidatePath(`/traveler/bookings/${parsed.data.bookingId}`);
+  revalidatePath("/owner/bookings");
+  revalidatePath(`/owner/bookings/request-decision?bookingId=${parsed.data.bookingId}`);
   return ok("Booking cancelled successfully.");
 }
 
 const deleteMessageSchema = z.object({
-  messageId: z.string().min(1),
+  messageId: z.string().uuid(),
 });
 
-const markReadSchema = z.object({
-  conversationId: z.string().min(1),
-});
+function getNotificationActionErrorMessage() {
+  return "We could not update that notification right now. Please try again.";
+}
 
 export async function sendConversationMessage(input: unknown): Promise<ActionResult> {
   const parsed = messageSchema.safeParse(input);
@@ -208,33 +240,22 @@ export async function sendConversationMessage(input: unknown): Promise<ActionRes
   }
 
   if (supabase) {
-    const { data: member } = await supabase
-      .from("conversation_members")
-      .select("conversation_id")
-      .eq("conversation_id", parsed.data.conversationId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!member) {
-      return fail("You do not have access to this conversation.");
-    }
-
-    const { error } = await supabase.from("messages").insert({
-      body: parsed.data.message,
-      conversation_id: parsed.data.conversationId,
-      message_type: "text",
-      sender_id: user.id,
+    const { error } = await supabase.rpc("send_conversation_message", {
+      body_input: parsed.data.message,
+      conversation_uuid: parsed.data.conversationId,
+      reply_to_message_uuid: parsed.data.replyToMessageId,
     });
 
-    if (error) return fail(error.message);
+    if (error) return fail("We could not send that message right now.");
   }
 
   revalidatePath("/traveler/messages");
+  revalidatePath("/owner/messages");
   return ok("Message sent.");
 }
 
 export async function markConversationRead(input: unknown): Promise<ActionResult> {
-  const parsed = markReadSchema.safeParse(input);
+  const parsed = conversationReadSchema.safeParse(input);
 
   if (!parsed.success) {
     return fail("Missing conversation.");
@@ -247,19 +268,19 @@ export async function markConversationRead(input: unknown): Promise<ActionResult
   }
 
   if (supabase) {
-    const { error } = await supabase
-      .from("conversation_members")
-      .update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", parsed.data.conversationId)
-      .eq("user_id", user.id);
+    const { error } = await supabase.rpc("mark_conversation_read", {
+      conversation_uuid: parsed.data.conversationId,
+      last_read_message_uuid: parsed.data.lastReadMessageId,
+    });
 
-    if (error) return fail(error.message);
+    if (error) return fail("We could not update the read state right now.");
   } else {
     // MUTATE the in-memory dev store so read state survives navigation/refresh
     devMarkConversationRead(parsed.data.conversationId);
   }
 
   revalidatePath("/traveler/messages");
+  revalidatePath("/owner/messages");
   return ok("Conversation marked as read.");
 }
 
@@ -277,23 +298,19 @@ export async function deleteConversationMessage(input: unknown): Promise<ActionR
   }
 
   if (supabase) {
-    const { error } = await supabase
-      .from("messages")
-      .update({ body: null, message_type: "system" })
-      .eq("id", parsed.data.messageId)
-      .eq("sender_id", user.id);
+    const { data, error } = await supabase.rpc("delete_own_conversation_message", {
+      message_uuid: parsed.data.messageId,
+    });
 
-    if (error) return fail(error.message);
+    if (error || !(data ?? []).length) {
+      return fail("We could not delete that message.");
+    }
   }
 
   revalidatePath("/traveler/messages");
+  revalidatePath("/owner/messages");
   return ok("Message deleted.");
 }
-
-const toggleNotificationReadSchema = z.object({
-  notificationId: z.string().min(1),
-  isRead: z.boolean(),
-});
 
 export async function markNotificationRead(input: unknown): Promise<ActionResult> {
   const parsed = notificationSchema.safeParse(input);
@@ -309,24 +326,27 @@ export async function markNotificationRead(input: unknown): Promise<ActionResult
   }
 
   if (supabase) {
+    const readAt = new Date().toISOString();
     const { error } = await supabase
       .from("notifications")
-      .update({ is_read: true })
+      .update({ is_read: true, read_at: readAt })
       .eq("id", parsed.data.notificationId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
 
-    if (error) return fail(error.message);
+    if (error) return fail(getNotificationActionErrorMessage());
   } else {
     // MUTATE the in-memory dev store so read state survives navigation/refresh
     devMarkNotificationRead(parsed.data.notificationId);
   }
 
   revalidatePath("/traveler/notifications");
+  revalidatePath("/traveler/dashboard");
   return ok("Notification marked as read.");
 }
 
 export async function markNotificationUnread(input: unknown): Promise<ActionResult> {
-  const parsed = toggleNotificationReadSchema.safeParse(input);
+  const parsed = notificationSchema.safeParse(input);
 
   if (!parsed.success) {
     return fail("Missing notification.");
@@ -341,22 +361,20 @@ export async function markNotificationUnread(input: unknown): Promise<ActionResu
   if (supabase) {
     const { error } = await supabase
       .from("notifications")
-      .update({ is_read: parsed.data.isRead })
+      .update({ is_read: false, read_at: null })
       .eq("id", parsed.data.notificationId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
 
-    if (error) return fail(error.message);
+    if (error) return fail(getNotificationActionErrorMessage());
   } else {
     // MUTATE the in-memory dev store so read state survives navigation/refresh
-    if (parsed.data.isRead) {
-      devMarkNotificationRead(parsed.data.notificationId);
-    } else {
-      devMarkNotificationUnread(parsed.data.notificationId);
-    }
+    devMarkNotificationUnread(parsed.data.notificationId);
   }
 
   revalidatePath("/traveler/notifications");
-  return ok(parsed.data.isRead ? "Notification marked as read." : "Notification marked as unread.");
+  revalidatePath("/traveler/dashboard");
+  return ok("Notification marked as unread.");
 }
 
 export async function markAllNotificationsRead(): Promise<ActionResult> {
@@ -367,12 +385,15 @@ export async function markAllNotificationsRead(): Promise<ActionResult> {
   }
 
   if (supabase) {
+    const readAt = new Date().toISOString();
     const { error } = await supabase
       .from("notifications")
-      .update({ is_read: true })
-      .eq("user_id", user.id);
+      .update({ is_read: true, read_at: readAt })
+      .eq("user_id", user.id)
+      .eq("is_read", false)
+      .is("deleted_at", null);
 
-    if (error) return fail(error.message);
+    if (error) return fail(getNotificationActionErrorMessage());
   } else {
     // MUTATE the in-memory dev store
     devMarkAllNotificationsRead();
@@ -397,20 +418,23 @@ export async function deleteNotification(input: unknown): Promise<ActionResult> 
   }
 
   if (supabase) {
+    const deletedAt = new Date().toISOString();
     const { error } = await supabase
       .from("notifications")
-      .delete()
+      .update({ deleted_at: deletedAt })
       .eq("id", parsed.data.notificationId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .is("deleted_at", null);
 
-    if (error) return fail(error.message);
+    if (error) return fail("We could not dismiss that notification right now. Please try again.");
   } else {
     // MUTATE the in-memory dev store
     devDeleteNotification(parsed.data.notificationId);
   }
 
   revalidatePath("/traveler/notifications");
-  return ok("Notification deleted.");
+  revalidatePath("/traveler/dashboard");
+  return ok("Notification dismissed.");
 }
 
 export async function submitReview(input: unknown): Promise<ActionResult> {
@@ -427,6 +451,18 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
   }
 
   if (supabase) {
+    const { data: existingReview } = await supabase
+      .from("reviews")
+      .select("id")
+      .eq("booking_id", parsed.data.bookingId)
+      .eq("traveler_id", user.id)
+      .is("removed_at", null)
+      .maybeSingle();
+
+    if (existingReview) {
+      return fail("You have already submitted a review for this stay.");
+    }
+
     const { data: booking } = await supabase
       .from("bookings")
       .select("id, property_id, owner_id, status")
@@ -439,7 +475,9 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
       return fail("Only completed bookings can be reviewed.");
     }
 
-    const { error } = await supabase.from("reviews").upsert(
+    const propertySlug = await getPropertySlugForReviewRevalidation(booking.property_id);
+
+    const { error } = await supabase.from("reviews").insert(
       {
         accuracy_rating: parsed.data.accuracyRating,
         booking_id: booking.id,
@@ -451,13 +489,17 @@ export async function submitReview(input: unknown): Promise<ActionResult> {
         property_id: booking.property_id,
         rating: parsed.data.rating,
         status: "submitted",
+        submitted_at: new Date().toISOString(),
         traveler_id: user.id,
         value_rating: parsed.data.valueRating,
       },
-      { onConflict: "booking_id,traveler_id" },
     );
 
-    if (error) return fail(error.message);
+    if (error) {
+      return fail(error.code === "23505" ? "You have already submitted a review for this stay." : getReviewActionErrorMessage());
+    }
+
+    revalidateReviewPropertyRoutes(propertySlug);
   } else {
     // MUTATE the dev store so new reviews persist in dev preview mode
     // The else branch only runs in dev-fallback mode (Supabase not configured),
@@ -488,6 +530,19 @@ export async function updateReview(input: unknown): Promise<ActionResult> {
   }
 
   if (supabase) {
+    const { data: existingReview } = await supabase
+      .from("reviews")
+      .select("property_id")
+      .eq("id", parsed.data.reviewId)
+      .eq("traveler_id", user.id)
+      .is("removed_at", null)
+      .is("hidden_at", null)
+      .maybeSingle();
+
+    if (!existingReview) {
+      return fail("We could not find that review.");
+    }
+
     const { error } = await supabase
       .from("reviews")
       .update({
@@ -501,9 +556,14 @@ export async function updateReview(input: unknown): Promise<ActionResult> {
         value_rating: parsed.data.valueRating,
       })
       .eq("id", parsed.data.reviewId)
-      .eq("traveler_id", user.id);
+      .eq("traveler_id", user.id)
+      .is("removed_at", null)
+      .is("hidden_at", null);
 
-    if (error) return fail(error.message);
+    if (error) return fail(getReviewActionErrorMessage());
+
+    const propertySlug = await getPropertySlugForReviewRevalidation(existingReview.property_id);
+    revalidateReviewPropertyRoutes(propertySlug);
   } else {
     devUpdateReview(parsed.data.reviewId, parsed.data);
   }
@@ -526,13 +586,26 @@ export async function deleteReview(input: unknown): Promise<ActionResult> {
   }
 
   if (supabase) {
-    const { error } = await supabase
+    const { data: existingReview } = await supabase
       .from("reviews")
-      .delete()
+      .select("property_id")
       .eq("id", parsed.data.reviewId)
-      .eq("traveler_id", user.id);
+      .eq("traveler_id", user.id)
+      .is("removed_at", null)
+      .maybeSingle();
 
-    if (error) return fail(error.message);
+    if (!existingReview) {
+      return fail("We could not find that review.");
+    }
+
+    const { data, error } = await supabase.rpc("remove_own_review", {
+      review_uuid: parsed.data.reviewId,
+    });
+
+    if (error || !(data ?? []).length) return fail(getReviewActionErrorMessage());
+
+    const propertySlug = await getPropertySlugForReviewRevalidation(existingReview.property_id);
+    revalidateReviewPropertyRoutes(propertySlug);
   } else {
     devDeleteReview(parsed.data.reviewId);
   }
@@ -669,35 +742,18 @@ export async function createSupportTicket(input: unknown): Promise<ActionResult>
   }
 
   if (supabase) {
-    const reference = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
-    const { data: ticket, error } = await supabase
-      .from("support_tickets")
-      .insert({
-        booking_id: parsed.data.bookingId || null,
-        category: mappedCategory,
-        priority: parsed.data.priority,
-        status: "open",
-        subject: parsed.data.subject,
-        ticket_reference: reference,
-        user_id: user.id,
-      })
-      .select("id")
-      .single();
-
-    if (error) return fail(error.message);
-
-    const message = await supabase.from("support_ticket_messages").insert({
-      is_internal: false,
-      message: parsed.data.message,
-      sender_id: user.id,
-      sender_role: "traveler" as SupportSenderRole,
-      ticket_id: ticket.id,
+    const ticket = await createSupportTicketRecord({
+      ...parsed.data,
+      category: mappedCategory,
     });
 
-    if (message.error) return fail(message.error.message);    } else {
-      const booking = parsed.data.bookingId
-        ? devTravelerData.bookings.find((b) => b.id === parsed.data.bookingId)
-        : undefined;
+    if (!ticket) {
+      return fail("We could not create that support ticket right now.");
+    }
+  } else {
+    const booking = parsed.data.bookingId
+      ? devTravelerData.bookings.find((b) => b.id === parsed.data.bookingId)
+      : undefined;
     devCreateSupportTicket({
       booking,
       category: parsed.data.category,
@@ -727,26 +783,11 @@ export async function replyToSupportTicket(input: unknown): Promise<ActionResult
   }
 
   if (supabase) {
-    const { data: ticket } = await supabase
-      .from("support_tickets")
-      .select("id")
-      .eq("id", parsed.data.ticketId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const message = await addSupportTicketMessage(parsed.data.ticketId, parsed.data.message);
 
-    if (!ticket) {
-      return fail("You do not have access to this ticket.");
+    if (!message) {
+      return fail("We could not send that support reply right now.");
     }
-
-    const { error } = await supabase.from("support_ticket_messages").insert({
-      is_internal: false,
-      message: parsed.data.message,
-      sender_id: user.id,
-      sender_role: "traveler" as SupportSenderRole,
-      ticket_id: ticket.id,
-    });
-
-    if (error) return fail(error.message);
   } else {
     devReplyToSupportTicket(parsed.data.ticketId, parsed.data.message);
   }
@@ -764,13 +805,17 @@ export async function updateSupportTicketStatus(ticketId: string, status: "close
   }
 
   if (supabase) {
-    const { error } = await supabase
-      .from("support_tickets")
-      .update(status === "closed" ? { closed_at: new Date().toISOString(), status } : { closed_at: null, status })
-      .eq("id", ticketId)
-      .eq("user_id", user.id);
+    const result = await updateOwnSupportTicketStatus(ticketId, status);
 
-    if (error) return fail(error.message);
+    if (!result.ok) {
+      return fail(
+        result.reason === "forbidden"
+          ? "DAR support controls this ticket status right now."
+          : result.reason === "not_found"
+            ? "We could not find that ticket."
+            : "We could not update that ticket right now.",
+      );
+    }
   } else {
     devUpdateTicketStatus(ticketId, status);
   }

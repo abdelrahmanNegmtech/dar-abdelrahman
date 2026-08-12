@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { featuredProperty } from "@/app/properties/[slug]/property-data";
 import { requiredRedirectForStep } from "@/app/booking/flow-guards";
-import { compactBookingQuery, shortPath } from "@/app/routing";
+import { shortPath } from "@/app/routing";
+import { createTravelerBookingAction } from "@/features/bookings/actions";
 import { cn } from "@/lib/utils";
 
 type IconName =
@@ -106,6 +107,8 @@ type CheckoutBooking = {
 };
 
 type PendingBookingPayload = {
+  bookingId?: string;
+  bookingReference?: string;
   propertyId?: string;
   title?: string;
   location?: string;
@@ -126,6 +129,12 @@ type PendingBookingPayload = {
   paymentSubmittedAt?: string;
   currency?: string;
   locale?: string;
+  guestInfo?: {
+    email?: string;
+    fullName?: string;
+    phone?: string;
+    requests?: string;
+  };
 };
 
 const defaultBooking: CheckoutBooking = {
@@ -237,6 +246,8 @@ export default function CheckoutPage() {
   const [selectedPayment] = useState(readPendingPaymentMethod);
   const [receiptUploaded, setReceiptUploaded] = useState(true);
   const [promoCode, setPromoCode] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, startTransition] = useTransition();
   const total = getBookingTotal(booking);
   const needsReceipt = ["instapay", "vodafone", "fawry", "bank", "wallet"].includes(selectedPayment);
 
@@ -248,45 +259,59 @@ export default function CheckoutPage() {
   const submitForVerification = () => {
     const raw = window.sessionStorage.getItem("dar-pending-booking");
     const currentBooking = raw ? (JSON.parse(raw) as PendingBookingPayload) : {};
-    const pendingBooking = {
-      ...currentBooking,
-      title: currentBooking.title ?? booking.title,
-      location: currentBooking.location ?? booking.location,
-      image: currentBooking.image ?? booking.image,
-      checkIn: currentBooking.checkIn ?? booking.checkIn,
-      checkOut: currentBooking.checkOut ?? booking.checkOut,
-      guests: currentBooking.guests ?? Number.parseInt(booking.guests, 10) ?? 2,
-      nights: currentBooking.nights ?? booking.nights,
-      pricePerNight: currentBooking.pricePerNight ?? booking.nightly,
-      cleaningFee: currentBooking.cleaningFee ?? booking.cleaning,
-      serviceFee: currentBooking.serviceFee ?? booking.service,
-      discount: currentBooking.discount ?? booking.discount,
-      subtotal: currentBooking.subtotal ?? booking.nightly * booking.nights,
-      total,
-      currency: currentBooking.currency ?? "EGP",
-      locale: currentBooking.locale ?? "en",
-      paymentMethod: selectedPayment,
-      paymentId: currentBooking.paymentId ?? "#PAY-784512",
-      paymentSubmitted: true,
-      bookingStatus: "request_received",
-      paymentSubmittedAt: new Date().toISOString(),
-      receiptStatus: needsReceipt ? "pending_review" : "not_required",
-      bookingReference: "DAR-MAD-58291",
-    };
+    setSubmitError("");
 
-    window.sessionStorage.setItem("dar-pending-booking", JSON.stringify(pendingBooking));
-    const locale = pendingBooking.locale;
-    const confirmationPath = shortPath("/booking/request-received", String(locale ?? "en"));
-    const params = compactBookingQuery({
-      property: pendingBooking.propertyId ?? featuredProperty.slug,
-      checkIn: String(pendingBooking.checkIn),
-      checkOut: String(pendingBooking.checkOut),
-      guests: String(pendingBooking.guests),
-      nights: String(pendingBooking.nights),
-      locale: String(locale),
+    startTransition(async () => {
+      const guests = currentBooking.guests ?? Number.parseInt(booking.guests, 10) ?? 2;
+      const locale = currentBooking.locale ?? "en";
+      const result = await createTravelerBookingAction({
+        checkIn: String(currentBooking.checkIn ?? ""),
+        checkOut: String(currentBooking.checkOut ?? ""),
+        guests,
+        paymentMethod: selectedPayment,
+        propertyLookup: String(currentBooking.propertyId ?? featuredProperty.slug),
+        specialRequests: currentBooking.guestInfo?.requests,
+        travelerEmail: currentBooking.guestInfo?.email,
+        travelerFullName: currentBooking.guestInfo?.fullName,
+        travelerPhone: currentBooking.guestInfo?.phone,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.message);
+        return;
+      }
+
+      const pendingBooking = {
+        ...currentBooking,
+        bookingId: result.data.bookingId,
+        bookingReference: result.data.bookingReference,
+        title: currentBooking.title ?? booking.title,
+        location: currentBooking.location ?? booking.location,
+        image: currentBooking.image ?? booking.image,
+        checkIn: result.data.checkInDate,
+        checkOut: result.data.checkOutDate,
+        guests: result.data.guestsCount,
+        nights: currentBooking.nights ?? booking.nights,
+        pricePerNight: result.data.nightlyAmount,
+        cleaningFee: result.data.cleaningFee,
+        serviceFee: result.data.serviceFee,
+        discount: result.data.discountAmount,
+        subtotal: result.data.subtotalAmount,
+        total: result.data.totalAmount,
+        currency: result.data.currencyCode,
+        locale,
+        paymentMethod: selectedPayment,
+        paymentId: result.data.paymentReference ?? currentBooking.paymentId ?? "#PAY-784512",
+        paymentSubmitted: true,
+        bookingStatus: "request_received",
+        paymentSubmittedAt: new Date().toISOString(),
+        receiptStatus: needsReceipt ? "pending_review" : "not_required",
+      };
+
+      window.sessionStorage.setItem("dar-pending-booking", JSON.stringify(pendingBooking));
+      const confirmationPath = shortPath("/booking/request-received", String(locale));
+      router.push(`${confirmationPath}?bookingId=${encodeURIComponent(result.data.bookingId)}`);
     });
-
-    router.push(`${confirmationPath}?${params}`);
   };
 
   return (
@@ -395,15 +420,19 @@ export default function CheckoutPage() {
           </Link>
           <button
             onClick={submitForVerification}
+            disabled={isSubmitting}
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#5F36E9] px-8 text-[14px] font-bold text-white shadow-[0_10px_22px_rgba(95,54,233,0.22)] transition hover:bg-[#4E2DEF] disabled:cursor-not-allowed disabled:bg-[#AFA0F4] md:w-[430px]"
           >
             <Icon name="lock" className="h-4 w-4" />
-            Submit payment for verification
+            {isSubmitting ? "Submitting booking..." : "Submit payment for verification"}
           </button>
         </div>
         <p className="mt-2 text-center text-[12px] font-medium text-[#667085]">
           You won&apos;t be charged yet. We&apos;ll verify your payment first.
         </p>
+        {submitError ? (
+          <p className="mt-3 text-center text-[13px] font-semibold text-[#D92D20]">{submitError}</p>
+        ) : null}
       </div>
 
     </main>

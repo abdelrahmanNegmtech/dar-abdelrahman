@@ -39,6 +39,7 @@ export type PropertyRecord = {
   id: string;
   title: string;
   ownerName: string;
+  ownerProfileId?: string;
   ownerType: PropertyOwnerType;
   type: string;
   cityArea: string;
@@ -55,6 +56,8 @@ export type PropertyRecord = {
   phone: string;
   email: string;
   statusLabel: string;
+  checklist?: PropertyChecklistItem[];
+  reviewCount?: number;
 };
 
 export type PropertyChecklistItem = {

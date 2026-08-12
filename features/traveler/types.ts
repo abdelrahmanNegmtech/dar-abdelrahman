@@ -65,6 +65,9 @@ export type TravelerBooking = {
   id: string;
   reference: string;
   travelerId: string;
+  travelerEmail?: string | null;
+  travelerFullName?: string | null;
+  travelerPhone?: string | null;
   property: TravelerProperty;
   owner: {
     id: string;
@@ -89,8 +92,11 @@ export type TravelerBooking = {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   paymentMethodLabel: string;
+  paymentReference?: string | null;
+  paymentSubmittedAt?: string | null;
   cancellationPolicy: string;
   createdAt: string;
+  specialRequests?: string | null;
 };
 
 export type TravelerNotificationType =
@@ -119,7 +125,7 @@ export type MessageAttachment = {
   name: string;
   size: string;
   sizeBytes: number;
-  url: string;
+  url?: string;
   type: "image" | "pdf" | "file";
 };
 
@@ -150,7 +156,7 @@ export type TravelerConversation = {
   participant: {
     id: string;
     name: string;
-    role: "owner" | "support";
+    role: "owner" | "traveler" | "support";
     avatarUrl: string;
     isOnline: boolean;
     verified: boolean;
@@ -164,6 +170,7 @@ export type TravelerConversation = {
 export type TravelerReview = {
   id: string;
   bookingId: string;
+  propertySlug?: string;
   property: TravelerProperty;
   travelerName: string;
   travelerAvatarUrl: string;
@@ -221,7 +228,7 @@ export type SupportTicketStatus =
   | "closed"
   | "escalated";
 
-export type SupportTicketPriority = "low" | "medium" | "high";
+export type SupportTicketPriority = "low" | "medium" | "high" | "urgent";
 
 export type SupportTicketMessage = {
   id: string;

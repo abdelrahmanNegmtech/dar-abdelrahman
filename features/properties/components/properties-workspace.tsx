@@ -36,11 +36,15 @@ function filterByCategory(property: PropertyRecord, category: PropertyCategory) 
   }
 }
 
-export function PropertiesWorkspace() {
-  const [filters, setFilters] = useState(propertiesManagementData.initialFilters);
-  const [category, setCategory] = useState<PropertyCategory>(propertiesManagementData.initialCategory);
-  const [selectedPropertyId, setSelectedPropertyId] = useState(propertiesManagementData.initialPropertyId);
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([propertiesManagementData.initialPropertyId]);
+export function PropertiesWorkspace({
+  pageData = propertiesManagementData,
+}: {
+  pageData?: typeof propertiesManagementData;
+}) {
+  const [filters, setFilters] = useState(pageData.initialFilters);
+  const [category, setCategory] = useState<PropertyCategory>(pageData.initialCategory);
+  const [selectedPropertyId, setSelectedPropertyId] = useState(pageData.initialPropertyId);
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([pageData.initialPropertyId]);
   const [rowsPerPage, setRowsPerPage] = useState("5");
   const [page, setPage] = useState(1);
   const [adminNote, setAdminNote] = useState("");
@@ -50,7 +54,7 @@ export function PropertiesWorkspace() {
   const filteredProperties = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
 
-    return propertiesManagementData.properties.filter((property) => {
+    return pageData.properties.filter((property) => {
       const matchesSearch =
         !normalizedSearch ||
         [property.id, property.title, property.ownerName, property.cityArea].some((value) =>
@@ -59,14 +63,14 @@ export function PropertiesWorkspace() {
 
       return matchesSearch && filterByCategory(property, category);
     });
-  }, [category, filters.search]);
+  }, [category, filters.search, pageData.properties]);
 
-  const totalPages = 572;
+  const totalPages = Math.max(1, Math.ceil(filteredProperties.length / Math.max(1, Number(rowsPerPage))));
   const currentPage = Math.min(page, totalPages);
   const paginatedProperties = filteredProperties.slice(0, Number(rowsPerPage));
   const selectedProperty =
-    propertiesManagementData.properties.find((property) => property.id === selectedPropertyId) ??
-    propertiesManagementData.properties[1];
+    pageData.properties.find((property) => property.id === selectedPropertyId) ??
+    pageData.properties[0];
   const allVisibleRowsSelected =
     paginatedProperties.length > 0 &&
     paginatedProperties.every((property) => selectedRowIds.includes(property.id));
@@ -76,8 +80,8 @@ export function PropertiesWorkspace() {
   }
 
   function clearFilters() {
-    setFilters(propertiesManagementData.initialFilters);
-    setCategory(propertiesManagementData.initialCategory);
+    setFilters(pageData.initialFilters);
+    setCategory(pageData.initialCategory);
   }
 
   function toggleRow(rowId: string) {
@@ -102,7 +106,7 @@ export function PropertiesWorkspace() {
       sidebar={
         <Sidebar
           brand={<AdminBrand />}
-          groups={propertiesManagementData.sidebarGroups}
+          groups={pageData.sidebarGroups}
           footer={<SidebarSupportCard />}
           theme="dark"
         />
@@ -112,7 +116,7 @@ export function PropertiesWorkspace() {
       <PageContainer className="space-y-4 pt-1 md:pt-2">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0 space-y-4">
-            <PropertiesMetrics metrics={propertiesManagementData.metrics} />
+            <PropertiesMetrics metrics={pageData.metrics} />
 
             <PropertiesFilters
               filters={filters}
@@ -120,12 +124,12 @@ export function PropertiesWorkspace() {
               onClear={clearFilters}
               saveView={saveView}
               onToggleSaveView={() => setSaveView((current) => !current)}
-              options={propertiesManagementData.filterOptions}
+              options={pageData.filterOptions}
             />
 
             <PropertySummaryCards
-              summaries={propertiesManagementData.summaryCards}
-              qualityDistribution={propertiesManagementData.qualityDistribution}
+              summaries={pageData.summaryCards}
+              qualityDistribution={pageData.qualityDistribution}
             />
 
             <section className="rounded-[0.75rem] border border-border/90 bg-white px-3 py-3 shadow-[0_2px_10px_rgba(16,25,58,0.03)]">
@@ -135,7 +139,7 @@ export function PropertiesWorkspace() {
                     All properties
                   </h2>
                   <PropertiesTabs
-                    tabs={propertiesManagementData.categoryTabs}
+                    tabs={pageData.categoryTabs}
                     activeTab={category}
                     onChange={(value) => {
                       setCategory(value);
@@ -170,7 +174,7 @@ export function PropertiesWorkspace() {
           <div className="min-w-0 space-y-4">
             <PropertyDetailPanel
               property={selectedProperty}
-              checklist={propertiesManagementData.checklist}
+              checklist={selectedProperty?.checklist ?? pageData.checklist}
               adminNote={adminNote}
               onAdminNoteChange={setAdminNote}
               bookmarked={bookmarked}

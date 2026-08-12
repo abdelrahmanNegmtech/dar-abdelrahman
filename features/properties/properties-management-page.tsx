@@ -1,5 +1,6 @@
+import type { PropertiesPageData } from "./types";
 import { PropertiesWorkspace } from "./components/properties-workspace";
 
-export function PropertiesManagementPage() {
-  return <PropertiesWorkspace />;
+export function PropertiesManagementPage({ pageData }: { pageData?: PropertiesPageData }) {
+  return <PropertiesWorkspace pageData={pageData} />;
 }

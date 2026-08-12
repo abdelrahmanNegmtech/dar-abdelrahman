@@ -318,6 +318,7 @@ const ticketPriorityStyles: Record<SupportTicketPriority, string> = {
   high: "bg-red-50 text-dar-error",
   low: "bg-emerald-50 text-dar-success",
   medium: "bg-amber-50 text-dar-warning",
+  urgent: "bg-red-50 text-dar-error",
 };
 
 export function StatusBadge({

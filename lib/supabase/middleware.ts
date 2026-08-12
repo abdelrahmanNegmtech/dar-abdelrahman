@@ -101,8 +101,7 @@ export async function updateSession(request: NextRequest) {
 
     if (
       (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) &&
-      accountType !== "admin" &&
-      accountType !== "support_staff"
+      accountType !== "admin"
     ) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/search";

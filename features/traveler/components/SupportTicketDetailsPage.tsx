@@ -76,6 +76,15 @@ export function SupportTicketDetailsPage({ ticket }: { ticket: SupportTicket | n
   const ticketId = ticket.id;
 
   function sendReply() {
+    if (files.length) {
+      showToast({
+        description: "Support attachment uploads are not connected in Phase 16 yet.",
+        title: "Attachments are deferred",
+        type: "info",
+      });
+      return;
+    }
+
     startTransition(async () => {
       const result = await replyToSupportTicket({ message: reply, ticketId });
       showToast({

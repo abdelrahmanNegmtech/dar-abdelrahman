@@ -1,4 +1,18 @@
 import { redirect } from "next/navigation";
+import {
+  getTravelerBookingById as getTravelerBookingByIdFromSupabase,
+  getTravelerBookings as getTravelerBookingsFromSupabase,
+} from "@/features/bookings/data/booking-queries";
+import { getMessagingData, getMessagingUnreadCount } from "@/features/messaging/data/messaging-queries";
+import {
+  getTravelerNotificationsPageData,
+  getUnreadNotificationCount,
+} from "@/features/notifications/data/notification-queries";
+import { getTravelerReviewsData as getTravelerReviewsDataFromSupabase } from "@/features/reviews/data/review-queries";
+import {
+  getMySupportTickets,
+  getSupportTicketById as getSupportTicketByIdFromSupabase,
+} from "@/features/support/data/support-ticket-queries";
 import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import type { ProfileRow } from "@/lib/supabase/database";
@@ -54,6 +68,18 @@ const devAuthBypassTravelerProfile: TravelerProfile = {
 
 let travelerStoreSelectionLogged = false;
 
+function normalizeAvatarUrl(value: string | null | undefined, fallback: string) {
+  if (!value) {
+    return fallback;
+  }
+
+  if (value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://")) {
+    return value;
+  }
+
+  return fallback;
+}
+
 function cloneTravelerData(data: TravelerData): TravelerData {
   return JSON.parse(JSON.stringify(data)) as TravelerData;
 }
@@ -87,7 +113,7 @@ function mapProfile(row: SupabaseProfileRow | null | undefined, fallback: Travel
     accountType,
     activity: fallback.activity,
     address: row.address ?? fallback.address,
-    avatarUrl: row.avatar_url ?? fallback.avatarUrl,
+    avatarUrl: normalizeAvatarUrl(row.avatar_url, fallback.avatarUrl),
     city: row.city ?? fallback.city,
     completion: row.profile_completion,
     country: row.country ?? fallback.country,
@@ -150,21 +176,34 @@ async function getAuthenticatedProfile() {
 }
 
 export async function getTravelerData(): Promise<TravelerData> {
-  const { profile } = await getAuthenticatedProfile();
+  const { profile, usingFallback } = await getAuthenticatedProfile();
   const data = getTravelerStoreData();
+  const bookings =
+    usingFallback || !getSupabaseConfig()
+      ? data.bookings
+      : await getTravelerBookingsFromSupabase();
 
   return {
     ...data,
+    bookings,
     profile,
   };
 }
 
 export async function getTravelerShellData() {
   const data = await getTravelerData();
+  const unreadMessages =
+    !isDevAuthBypassEnabled() && getSupabaseConfig()
+      ? await getMessagingUnreadCount("traveler")
+      : data.conversations.reduce((total, conversation) => total + conversation.unreadCount, 0);
+  const notificationsUnread =
+    !isDevAuthBypassEnabled() && getSupabaseConfig()
+      ? await getUnreadNotificationCount()
+      : data.notifications.filter((notification) => !notification.isRead).length;
   return {
-    notificationsUnread: data.notifications.filter((notification) => !notification.isRead).length,
+    notificationsUnread,
     profile: data.profile,
-    unreadMessages: data.conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    unreadMessages,
   };
 }
 
@@ -173,10 +212,14 @@ export async function getDashboardData() {
   const upcomingBookings = data.bookings.filter((booking) => booking.status === "confirmed" || booking.status === "pending");
   const completedBookings = data.bookings.filter((booking) => booking.status === "completed");
   const upcomingStay = upcomingBookings[0] ?? null;
+  const notificationsUnread =
+    !isDevAuthBypassEnabled() && getSupabaseConfig()
+      ? await getUnreadNotificationCount()
+      : data.notifications.filter((notification) => !notification.isRead).length;
 
   return {
     completedBookings,
-    notificationsUnread: data.notifications.filter((notification) => !notification.isRead).length,
+    notificationsUnread,
     paymentBalance: data.wallet.balance,
     profile: data.profile,
     recommendedProperties: data.properties.filter((property) => property.status === "published").slice(0, 4),
@@ -211,6 +254,10 @@ export async function getBookingsData(status?: BookingStatus | "upcoming" | "pas
 }
 
 export async function getBookingDetailsData(bookingId: string) {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    return getTravelerBookingByIdFromSupabase(bookingId);
+  }
+
   const data = await getTravelerData();
   return data.bookings.find((booking) => booking.id === bookingId || booking.reference === bookingId) ?? null;
 }
@@ -222,7 +269,14 @@ export async function getSavedPropertiesData() {
   };
 }
 
-export async function getMessagesData(selectedConversationId?: string) {
+export async function getMessagesData(selectedConversationId?: string, bookingId?: string) {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    return getMessagingData("traveler", {
+      bookingId,
+      selectedConversationId,
+    });
+  }
+
   const data = await getTravelerData();
   const selectedConversation =
     data.conversations.find((conversation) => conversation.id === selectedConversationId) ?? data.conversations[0] ?? null;
@@ -234,6 +288,12 @@ export async function getMessagesData(selectedConversationId?: string) {
 }
 
 export async function getNotificationsData(type?: string) {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    const allowedFilters = new Set(["all", "approval", "booking", "message", "payment", "support", "system", "unread"]);
+    const filter = allowedFilters.has(type ?? "") ? type as "all" | "approval" | "booking" | "message" | "payment" | "support" | "system" | "unread" : "all";
+    return getTravelerNotificationsPageData(filter);
+  }
+
   const data = await getTravelerData();
   const notifications = type && type !== "all"
     ? data.notifications.filter((notification) => notification.type === type || (type === "unread" && !notification.isRead))
@@ -246,6 +306,10 @@ export async function getNotificationsData(type?: string) {
 }
 
 export async function getReviewsData() {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    return getTravelerReviewsDataFromSupabase();
+  }
+
   const data = await getTravelerData();
 
   // Reviews the traveler has already submitted
@@ -334,6 +398,14 @@ export async function getSettingsData() {
 }
 
 export async function getSupportData() {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    const bookings = await getTravelerBookingsFromSupabase();
+    return {
+      bookings,
+      tickets: await getMySupportTickets(bookings),
+    };
+  }
+
   const data = await getTravelerData();
   return {
     bookings: data.bookings,
@@ -342,6 +414,11 @@ export async function getSupportData() {
 }
 
 export async function getSupportTicketData(ticketId: string): Promise<SupportTicket | null> {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    const bookings = await getTravelerBookingsFromSupabase();
+    return getSupportTicketByIdFromSupabase(ticketId, bookings);
+  }
+
   const data = await getTravelerData();
   return data.tickets.find((ticket) => ticket.id === ticketId || ticket.reference === ticketId) ?? null;
 }

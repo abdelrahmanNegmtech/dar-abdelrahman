@@ -66,22 +66,20 @@ function CompactRoleBadge({ user }: { user: UserRecord }) {
   const tone =
     user.role === "owner"
       ? "warning"
-      : user.role === "broker"
+      : user.role === "support_staff"
         ? "info"
-        : user.role === "hotel"
+        : user.role === "admin"
           ? "brand"
           : "neutral";
 
   const label =
     user.role === "owner"
       ? "Owner"
-      : user.role === "broker"
-        ? "Broker"
-        : user.role === "hotel"
-          ? "Hotel"
-          : user.role === "admin"
-            ? "Admin"
-            : "Guest";
+      : user.role === "support_staff"
+        ? "Support"
+        : user.role === "admin"
+          ? "Admin"
+          : "Guest";
 
   return <Badge tone={tone} className="rounded-[0.4rem] px-2 py-0.5 text-[11px] shadow-none">{label}</Badge>;
 }
@@ -137,12 +135,10 @@ function filterByCategory(user: UserRecord, category: UserCategory) {
       return user.role === "guest";
     case "owners":
       return user.role === "owner";
-    case "brokers":
-      return user.role === "broker";
-    case "hotels":
-      return user.role === "hotel";
     case "admins":
       return user.role === "admin";
+    case "support":
+      return user.role === "support_staff";
     case "suspended":
       return user.status === "suspended";
     case "pending":
@@ -173,12 +169,16 @@ function filterByJoinedDate(user: UserRecord, joinedDate: UserFilters["joinedDat
   return true;
 }
 
-export function UsersManagementWorkspace() {
-  const [filters, setFilters] = useState(usersManagementData.initialFilters);
-  const [category, setCategory] = useState<UserCategory>(usersManagementData.initialCategory);
-  const [selectedUserId, setSelectedUserId] = useState(usersManagementData.initialUserId);
+export function UsersManagementWorkspace({
+  pageData = usersManagementData,
+}: {
+  pageData?: typeof usersManagementData;
+}) {
+  const [filters, setFilters] = useState(pageData.initialFilters);
+  const [category, setCategory] = useState<UserCategory>(pageData.initialCategory);
+  const [selectedUserId, setSelectedUserId] = useState(pageData.initialUserId);
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([
-    usersManagementData.initialUserId,
+    pageData.initialUserId,
   ]);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
@@ -187,7 +187,7 @@ export function UsersManagementWorkspace() {
   const filteredUsers = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
 
-    return usersManagementData.users.filter((user) => {
+    return pageData.users.filter((user) => {
       const matchesSearch =
         !normalizedSearch ||
         [user.name, user.id, user.email, user.phone].some((value) =>
@@ -214,7 +214,7 @@ export function UsersManagementWorkspace() {
         matchesCategory
       );
     });
-  }, [category, filters]);
+  }, [category, filters, pageData.users]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
@@ -231,8 +231,8 @@ export function UsersManagementWorkspace() {
   }, [currentPage, filteredUsers, rowsPerPage]);
 
   const selectedUser =
-    usersManagementData.users.find((user) => user.id === effectiveSelectedUserId) ??
-    usersManagementData.users[0];
+    pageData.users.find((user) => user.id === effectiveSelectedUserId) ??
+    pageData.users[0];
 
   const allVisibleRowsSelected =
     paginatedUsers.length > 0 &&
@@ -244,8 +244,8 @@ export function UsersManagementWorkspace() {
   }
 
   function clearFilters() {
-    setFilters(usersManagementData.initialFilters);
-    setCategory(usersManagementData.initialCategory);
+    setFilters(pageData.initialFilters);
+    setCategory(pageData.initialCategory);
     setPage(1);
   }
 
@@ -274,7 +274,7 @@ export function UsersManagementWorkspace() {
       sidebar={
         <Sidebar
           brand={<AdminBrand />}
-          groups={usersManagementData.sidebarGroups}
+          groups={pageData.sidebarGroups}
           footer={<SidebarSupportCard />}
           theme="dark"
         />
@@ -283,7 +283,7 @@ export function UsersManagementWorkspace() {
     >
       <PageContainer className="space-y-6 pt-1 md:pt-2">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {usersManagementData.metrics.map((metric) => {
+          {pageData.metrics.map((metric) => {
             const Icon = METRIC_ICON_MAP[metric.icon];
 
             return (
@@ -426,7 +426,7 @@ export function UsersManagementWorkspace() {
                 </h2>
 
                 <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-[#E5E7EB]">
-                  {usersManagementData.categoryTabs.map((item) => {
+                  {pageData.categoryTabs.map((item) => {
                     const isActive = item.value === category;
 
                     return (
@@ -640,7 +640,7 @@ export function UsersManagementWorkspace() {
                               setRowsPerPage(Number(event.target.value));
                               setPage(1);
                             }}
-                            options={usersManagementData.filterOptions.rowsPerPage.map((option) => ({
+                            options={pageData.filterOptions.rowsPerPage.map((option) => ({
                               label: option.label,
                               value: String(option.value),
                             }))}
@@ -655,8 +655,8 @@ export function UsersManagementWorkspace() {
             </section>
 
             <UsersLowerPanels
-              roleOptions={usersManagementData.roleOptions}
-              permissionItems={usersManagementData.permissionItems}
+              roleOptions={pageData.roleOptions}
+              permissionItems={pageData.permissionItems}
               selectedCount={selectedRowIds.length}
               user={selectedUser}
             />
@@ -667,7 +667,7 @@ export function UsersManagementWorkspace() {
               user={selectedUser}
               adminNote={adminNote}
               onAdminNoteChange={setAdminNote}
-              summaries={usersManagementData.summaryCards}
+              summaries={pageData.summaryCards}
             />
           </div>
         </div>

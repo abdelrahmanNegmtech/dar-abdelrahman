@@ -1,8 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { shortPath } from "@/app/routing";
+import { getCurrentProfile, getCurrentUser } from "@/lib/supabase/auth";
 
-export default function MessagesPage() {
+export default async function MessagesPage() {
+  const user = await getCurrentUser();
+  const profile = await getCurrentProfile();
+
+  if (user && profile?.account_type === "owner") {
+    redirect("/owner/messages");
+  }
+
+  if (user && profile?.account_type === "guest") {
+    redirect("/traveler/messages");
+  }
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] p-4 text-[#090B32]">
       <div className="mx-auto min-h-[calc(100vh-32px)] max-w-[920px] rounded-[28px] border border-[#DFE6F1] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.06)]">

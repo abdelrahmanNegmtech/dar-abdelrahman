@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Icon } from "@/components/host-landing/icons";
 import { DarLogo } from "@/components/brand/dar-logo";
+import { getCurrentProfile } from "@/lib/supabase/auth";
 
 const sidebarItems = [
   ["Overview", "home", "/dashboard", ""],
@@ -45,7 +47,13 @@ const tips = ["Use real, bright photos", "Add clear rules and check-in info", "K
 const cardFrame = "rounded-lg border border-[#dfe5ef] bg-white shadow-[0_6px_18px_rgba(8,18,43,0.025)]";
 const formCardFrame = "rounded-xl border border-[#dfe5ef] bg-white shadow-[0_8px_24px_rgba(8,18,43,0.025)]";
 
-export default function AddPropertyPage() {
+export default async function AddPropertyPage() {
+  const profile = await getCurrentProfile();
+
+  if (profile?.account_type === "owner") {
+    redirect("/owner/properties/new/details");
+  }
+
   return (
     <main className="min-h-screen bg-[#f8fafc] text-[var(--foreground)]">
       <div className="owner-dashboard-frame">

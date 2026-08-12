@@ -1,3 +1,5 @@
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bookmark,
   Building2,
@@ -14,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { Badge, Button, RightPanel, Separator, Textarea } from "@/features/design-system";
+import { moderatePropertyAction } from "@/features/admin/actions";
 
 import type { PropertyChecklistItem, PropertyRecord } from "../types";
 
@@ -32,6 +35,26 @@ export function PropertyDetailPanel({
   bookmarked: boolean;
   onToggleBookmark: () => void;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  function runModerationAction(status: "approved" | "rejected" | "suspended") {
+    startTransition(async () => {
+      const result = await moderatePropertyAction({
+        note: adminNote,
+        propertyId: property.id,
+        status,
+      });
+
+      setActionMessage(result.message);
+
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <RightPanel className="rounded-[0.65rem] !p-4">
       <div className="space-y-4">
@@ -125,6 +148,8 @@ export function PropertyDetailPanel({
               variant="outline"
               icon={<CheckCircle2 className="size-4" />}
               className="!border-[#22C55E] !text-[#16A34A] shadow-none hover:!border-[#22C55E] hover:!bg-[rgba(34,197,94,0.06)]"
+              disabled={isPending || property.status === "live"}
+              onClick={() => runModerationAction("approved")}
             >
               Approve listing
             </ActionButton>
@@ -132,6 +157,8 @@ export function PropertyDetailPanel({
               variant="danger-outline"
               icon={<FileText className="size-4" />}
               className="!border-[#EF4444] !text-[#EF4444] shadow-none hover:!border-[#EF4444] hover:!bg-[rgba(239,68,68,0.06)]"
+              disabled={isPending || property.status === "reported"}
+              onClick={() => runModerationAction("rejected")}
             >
               Reject listing
             </ActionButton>
@@ -139,20 +166,24 @@ export function PropertyDetailPanel({
               variant="warning-outline"
               icon={<FileText className="size-4" />}
               className="!border-[#F59E0B] !text-[#D97706] shadow-none hover:!border-[#F59E0B] hover:!bg-[rgba(245,158,11,0.06)]"
+              disabled
             >
-              Request documents
+              Request documents (Deferred)
             </ActionButton>
             <ActionButton
               variant="outline"
               icon={<Pencil className="size-4" />}
               className="!border-[#CBD5E1] !text-[#334155] shadow-none hover:!border-[#CBD5E1] hover:!bg-[#F8FAFC]"
+              disabled
             >
-              Edit property
+              Edit property (Owner flow)
             </ActionButton>
             <ActionButton
               variant="danger-outline"
               icon={<Lock className="size-4" />}
               className="!border-[#EF4444] !text-[#EF4444] shadow-none hover:!border-[#EF4444] hover:!bg-[rgba(239,68,68,0.06)]"
+              disabled={isPending || property.status !== "live"}
+              onClick={() => runModerationAction("suspended")}
             >
               Suspend property
             </ActionButton>
@@ -160,8 +191,9 @@ export function PropertyDetailPanel({
               variant="outline"
               icon={<Sparkles className="size-4" />}
               className="!border-[#6C4CF1] !text-[#6C4CF1] shadow-none hover:!border-[#6C4CF1] hover:!bg-[rgba(108,76,241,0.06)]"
+              disabled
             >
-              Feature listing
+              Feature listing (Deferred)
             </ActionButton>
           </div>
         </div>
@@ -179,7 +211,7 @@ export function PropertyDetailPanel({
           />
           <div className="text-[11px] text-foreground-muted">
             <p>Last updated by Admin Team</p>
-            <p>May 16, 2026 - 10:45 AM</p>
+            <p>{actionMessage ?? "Awaiting admin action."}</p>
           </div>
         </div>
       </div>
@@ -212,17 +244,23 @@ function ActionButton({
   variant,
   icon,
   className,
+  disabled,
+  onClick,
 }: {
   children: React.ReactNode;
   variant: "outline" | "warning-outline" | "danger-outline";
   icon?: React.ReactNode;
   className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <Button
       variant={variant}
       size="sm"
       leadingIcon={icon}
+      disabled={disabled}
+      onClick={onClick}
       className={`h-8 justify-center rounded-[0.4rem] text-[11px] ${className ?? ""}`}
     >
       {children}

@@ -98,7 +98,7 @@ function ConfirmDialog({
             onClick={onConfirm}
             type="button"
           >
-            Delete
+            Dismiss
           </button>
         </div>
       </div>
@@ -176,7 +176,7 @@ export function NotificationsPage({ notifications, stats }: NotificationsPagePro
       return next;
     });
     startTransition(async () => {
-      await markNotificationUnread({ notificationId, isRead: false });
+      await markNotificationUnread({ notificationId });
       showToast({ description: "Notification marked as unread.", title: "Unread", type: "success" });
     });
     setMenuOpen(false);
@@ -223,7 +223,7 @@ export function NotificationsPage({ notifications, stats }: NotificationsPagePro
       const result = await deleteNotification({ notificationId });
       showToast({
         description: result.message,
-        title: result.ok ? "Notification deleted" : "Could not delete",
+        title: result.ok ? "Notification dismissed" : "Could not dismiss",
         type: result.ok ? "success" : "error",
       });
     });
@@ -356,7 +356,7 @@ export function NotificationsPage({ notifications, stats }: NotificationsPagePro
                         </Link>
                         <IconButton
                           className="size-9"
-                          label={`Delete ${notification.title}`}
+                          label={`Dismiss ${notification.title}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             setShowConfirmDelete(notification.id);
@@ -461,7 +461,7 @@ export function NotificationsPage({ notifications, stats }: NotificationsPagePro
               actions.push({ icon: Eye, label: "Mark as read", onClick: () => markRead(selected.id) });
             }
             actions.push({ icon: Copy, label: "Copy notification details", onClick: () => handleCopyDetails(selected) });
-            actions.push({ icon: Trash2, label: "Delete notification", onClick: () => { setShowConfirmDelete(selected.id); setMenuOpen(false); }, danger: true });
+            actions.push({ icon: Trash2, label: "Dismiss notification", onClick: () => { setShowConfirmDelete(selected.id); setMenuOpen(false); }, danger: true });
             return actions.map((action) => {
               const ActionIcon = action.icon;
               return (
@@ -501,10 +501,10 @@ export function NotificationsPage({ notifications, stats }: NotificationsPagePro
 
       {showConfirmDelete ? (
         <ConfirmDialog
-          message="This notification will be permanently deleted."
+          message="This notification will be dismissed from your list."
           onCancel={() => setShowConfirmDelete(null)}
           onConfirm={() => removeNotification(showConfirmDelete)}
-          title="Delete notification?"
+          title="Dismiss notification?"
         />
       ) : null}
     </div>
