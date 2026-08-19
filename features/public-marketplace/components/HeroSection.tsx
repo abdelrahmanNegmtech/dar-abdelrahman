@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { HeroFeatureBadges } from "./HeroFeatureBadges";
 import { HeroSearchCard } from "./HeroSearchCard";
 import { MarketplaceNavbar } from "./MarketplaceNavbar";
@@ -6,6 +9,8 @@ import { PropertyTypeSelector } from "./PropertyTypeSelector";
 import { marketplaceImages } from "../assets";
 
 export function HeroSection() {
+  const [propertyType, setPropertyType] = useState("Studios & Apartments");
+
   return (
     <section className="overflow-x-hidden bg-white p-3 sm:p-4 lg:p-5 xl:p-0">
       <div className="relative min-h-[680px] w-full overflow-hidden rounded-[32px] bg-[#050B18] shadow-[0_30px_90px_rgba(2,6,23,0.2)] sm:min-h-[660px] lg:rounded-[32px] xl:min-h-[455px] xl:rounded-none xl:rounded-br-[18px]">
@@ -41,11 +46,11 @@ export function HeroSection() {
           </div>
 
           <div className="mt-7 max-w-[690px] xl:mt-5">
-            <PropertyTypeSelector />
+            <PropertyTypeSelector activeType={propertyType} onChange={setPropertyType} />
           </div>
 
           <div className="mt-5 max-w-[1120px] xl:mt-4">
-            <HeroSearchCard />
+            <HeroSearchCard propertyType={propertyType} />
           </div>
 
           <div className="mt-5 max-w-[1120px] xl:mt-4">

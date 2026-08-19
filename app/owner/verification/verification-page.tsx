@@ -43,7 +43,7 @@ export default function VerificationPage() {
     if (missing.length) { setToast("Please complete the highlighted requirements."); return; }
     const next = { ...draft, submitted: true }; setDraft(next); localStorage.setItem("dar-owner-verification", JSON.stringify(next)); setToast("Verification submitted successfully.");
   }
-  const actions = <><button onClick={() => save()} className="owner-button-text h-10 rounded-md border border-[#cbd2df] px-7">Save draft</button><button onClick={submit} className="owner-button-text h-10 rounded-md bg-[var(--brand)] px-7 text-white">Submit verification</button></>;
+  const actions = <><button onClick={() => save()} className="owner-button-text h-10 rounded-md border border-[#cbd2df] px-7 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">Save draft</button><button onClick={submit} className="owner-button-text h-10 rounded-md bg-[var(--brand)] px-7 text-white transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">Submit verification</button></>;
   return <>
     <div className="mx-auto flex w-full max-w-[var(--page-max-width)] justify-end gap-3 px-7 pt-4 max-[900px]:px-4">{actions}</div>
     <div className="owner-dashboard-content">
@@ -115,7 +115,7 @@ export default function VerificationPage() {
           <Card className="p-5">
             <b className="owner-card-title">Need help?</b>
             <p className="owner-helper mt-3">Our verification team is here to help you<br/>complete the process.</p>
-            <Link href="/owner/help-center" className="owner-button-text mt-4 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--brand)] bg-white text-[var(--brand)] transition-colors hover:bg-[#f7f3ff] hover:text-[var(--brand)]">
+            <Link href="/owner/help-center" className="owner-button-text mt-4 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--brand)] bg-white text-[var(--brand)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]">
               <Headphones aria-hidden="true" size={15} strokeWidth={1.8} className="shrink-0 text-[var(--brand)]"/>
               Contact verification team
             </Link>
@@ -123,7 +123,7 @@ export default function VerificationPage() {
           <Card className="p-5"><div className="flex gap-3"><Icon name="shield" className="size-6 text-[var(--brand)]"/><span><b className="owner-card-title">Your security is our priority</b><p className="owner-helper mt-2">Your documents are reviewed by DAR admin only.</p></span></div></Card>
         </aside>
       </div>
-      <div className="mt-2 flex justify-center gap-4 rounded-lg bg-[#071426] p-4 text-white"><button onClick={()=>save()} className="owner-button-text h-10 w-52 rounded border border-white/40">Save draft</button><button onClick={submit} className="owner-button-text h-10 w-56 rounded bg-[var(--brand)]">Submit verification</button><Link href="/owner/help-center" className="owner-button-text grid h-10 w-52 place-items-center rounded border border-white/40">Contact support</Link></div>
+      <div className="mt-2 flex justify-center gap-4 rounded-lg bg-[#071426] p-4 text-white"><button onClick={()=>save()} className="owner-button-text h-10 w-52 rounded border border-white/40 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">Save draft</button><button onClick={submit} className="owner-button-text h-10 w-56 rounded bg-[var(--brand)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">Submit verification</button><Link href="/owner/help-center" className="owner-button-text grid h-10 w-52 place-items-center rounded border border-white/40 transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]">Contact support</Link></div>
     </div>
       {toast?<div className="owner-body fixed bottom-5 right-5 z-50 rounded-lg bg-[#10233c] px-5 py-3 text-white shadow-xl"><span className="!text-white">{toast}</span>{draft.submitted?<Link href="/owner/properties/1/publish" className="owner-button-text ml-4 underline">Return to publishing</Link>:null}</div>:null}
   </>;

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { CheckCircle2, ChevronRight, Clock3, Info, ShieldCheck, UserRound, Users } from "lucide-react";
 import { featuredProperty, resultProperties } from "@/app/properties/[slug]/property-data";
 import { cn } from "@/lib/utils";
 import { requiredRedirectForStep } from "@/app/booking/flow-guards";
@@ -21,6 +22,8 @@ type GuestInfo = {
 };
 
 type BookingPayload = {
+  bookingId?: string;
+  conversationId?: string;
   propertyId: string;
   title: string;
   location: string;
@@ -268,17 +271,51 @@ function initials(name: string) {
   return `${parts[0]?.[0] ?? "I"}${parts[1]?.[0] ?? "N"}`.toUpperCase();
 }
 
+function validConversationId(booking: BookingPayload) {
+  const conversationId = booking.conversationId?.trim();
+  return conversationId && /^[A-Za-z0-9][A-Za-z0-9_-]{2,127}$/.test(conversationId) ? conversationId : null;
+}
+
 export default function RequestReceivedPage() {
   const router = useRouter();
-  const [booking, setBooking] = useState(readBooking);
+  const [booking, setBooking] = useState<BookingPayload | null>(null);
   const [toastOpen, setToastOpen] = useState(true);
   const receiptInputRef = useRef<HTMLInputElement>(null);
-  const guest = booking.guestInfo ?? defaultGuestInfo;
 
   useEffect(() => {
     const redirect = requiredRedirectForStep("request-received");
-    if (redirect) router.replace(redirect);
+    if (redirect) {
+      router.replace(redirect);
+      return;
+    }
+
+    const hydrationFrame = window.requestAnimationFrame(() => {
+      setBooking(readBooking());
+    });
+
+    return () => window.cancelAnimationFrame(hydrationFrame);
   }, [router]);
+
+  if (!booking) {
+    return (
+      <main className="min-h-screen overflow-x-hidden bg-[#F8FAFC] text-[#080B32]">
+        <Header />
+        <div className="grid min-h-[calc(100vh-76px)] place-items-center px-5 py-12" role="status" aria-live="polite">
+          <div className="flex items-center gap-3 text-[14px] font-semibold text-[#59637C]">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#D8D0FF] border-t-[#5F36E9]" aria-hidden="true" />
+            Loading booking details…
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const guest = booking.guestInfo ?? defaultGuestInfo;
+  const conversationId = validConversationId(booking);
+  const messageOwnerHref = conversationId
+    ? `/traveler/messages?conversation=${encodeURIComponent(conversationId)}`
+    : null;
+  const messageOwnerUnavailableReason = "Messaging is not yet available for this booking.";
 
   const updateAndNavigate = (path: string) => {
     writeBooking(booking);
@@ -354,7 +391,8 @@ export default function RequestReceivedPage() {
         <section className="min-w-0 space-y-4">
           <Hero
             onViewBooking={viewBooking}
-            onMessageOwner={() => undefined}
+            messageOwnerHref={messageOwnerHref}
+            messageOwnerUnavailableReason={messageOwnerUnavailableReason}
             onDownloadReceipt={downloadReceipt}
           />
           <Timeline />
@@ -367,8 +405,10 @@ export default function RequestReceivedPage() {
               onUpload={() => receiptInputRef.current?.click()}
             />
             <ImportantSteps />
-            <Policies />
-            <RecommendedActions booking={booking} />
+            <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.28fr)] xl:col-span-2">
+              <Policies />
+              <RecommendedActions booking={booking} />
+            </div>
           </div>
           <SuggestedStays />
         </section>
@@ -377,7 +417,10 @@ export default function RequestReceivedPage() {
           {toastOpen ? <UploadToast onClose={() => setToastOpen(false)} /> : null}
           <BookingSummary booking={booking} />
           <SupportPanel />
-          <HostCard />
+          <HostCard
+            messageOwnerHref={messageOwnerHref}
+            messageOwnerUnavailableReason={messageOwnerUnavailableReason}
+          />
           <ReferenceCard />
         </aside>
       </div>
@@ -433,11 +476,13 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 
 function Hero({
   onViewBooking,
-  onMessageOwner,
+  messageOwnerHref,
+  messageOwnerUnavailableReason,
   onDownloadReceipt,
 }: {
   onViewBooking: () => void;
-  onMessageOwner: () => void;
+  messageOwnerHref: string | null;
+  messageOwnerUnavailableReason: string;
   onDownloadReceipt: () => void;
 }) {
   return (
@@ -474,10 +519,30 @@ function Hero({
               <Icon name="calendar" className="h-4 w-4" />
               View booking
             </button>
-            <button onClick={onMessageOwner} disabled className="inline-flex h-11 items-center justify-center gap-2 rounded-[7px] border border-[#BDAEFF] px-5 text-[14px] font-bold text-[#5F36E9] disabled:cursor-not-allowed disabled:opacity-60">
-              <Icon name="message" className="h-4 w-4" />
-              Message owner
-            </button>
+            {messageOwnerHref ? (
+              <Link
+                href={messageOwnerHref}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[7px] border border-[#BDAEFF] px-5 text-[14px] font-bold text-[#5F36E9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2"
+              >
+                <Icon name="message" className="h-4 w-4" />
+                Message owner
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                aria-describedby="hero-message-owner-reason"
+                title={messageOwnerUnavailableReason}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[7px] border border-[#BDAEFF] px-5 text-[14px] font-bold text-[#5F36E9] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Icon name="message" className="h-4 w-4" />
+                Message owner
+              </button>
+            )}
+            <span id="hero-message-owner-reason" className="sr-only">
+              {messageOwnerUnavailableReason}
+            </span>
             <button onClick={onDownloadReceipt} className="inline-flex h-11 items-center justify-center gap-2 rounded-[7px] border border-[#D8DFEA] px-5 text-[14px] font-bold text-[#111735] hover:border-[#BFC7D6]">
               <Icon name="download" className="h-4 w-4" />
               Download receipt
@@ -535,41 +600,63 @@ function StayDetails({ booking, onDirections, onCalendar }: { booking: BookingPa
   return (
     <Card>
       <h2 className="text-[17px] font-bold">Stay details</h2>
-      <div className="mt-4 grid gap-5 md:grid-cols-[280px_minmax(0,1fr)]">
-        <div>
-          <div className="relative h-[145px] overflow-hidden rounded-[8px] bg-[#EEF2F8]">
-            <Image src={booking.image} alt={booking.title} fill className="object-cover" />
+      <div className="mt-4 grid gap-5 md:grid-cols-[minmax(200px,0.82fr)_minmax(0,1.18fr)] md:items-start">
+        <div className="min-w-0">
+          <div className="relative aspect-[56/29] w-full overflow-hidden rounded-[8px] bg-[#EEF2F8]">
+            <Image
+              src={booking.image}
+              alt={booking.title}
+              fill
+              sizes="(max-width: 767px) calc(100vw - 80px), (max-width: 1279px) 38vw, 280px"
+              className="object-cover"
+            />
           </div>
           <div className="mt-2 grid grid-cols-5 gap-2">
             {featuredProperty.images.slice(0, 4).map((image) => (
-              <div key={image.src} className="relative h-12 overflow-hidden rounded-[6px]">
-                <Image src={image.src} alt="" fill className="object-cover" />
+              <div key={image.src} className="relative aspect-square min-w-0 overflow-hidden rounded-[6px] bg-[#EEF2F8]">
+                <Image
+                  src={image.src}
+                  alt=""
+                  fill
+                  sizes="(max-width: 767px) calc((100vw - 112px) / 5), (max-width: 1279px) 8vw, 56px"
+                  className="object-cover"
+                />
               </div>
             ))}
-            <div className="grid h-12 place-items-center rounded-[6px] bg-[#1F1A44] text-[11px] font-bold text-white">+12 Photos</div>
+            <div className="grid aspect-square min-w-0 place-items-center rounded-[6px] bg-[#1F1A44] px-1 text-center text-[11px] font-bold leading-[1.15] text-white">
+              <span>+12<br />Photos</span>
+            </div>
           </div>
         </div>
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-[17px] font-bold">{booking.title}</h3>
-            <span className="rounded-[6px] border border-[#F1CA82] bg-[#FFF8E9] px-2 py-1 text-[12px] font-bold text-[#B56B00]">Verified property</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h3 className="min-w-0 text-[17px] font-bold leading-6">{booking.title}</h3>
+            <span className="shrink-0 rounded-[6px] border border-[#F1CA82] bg-[#FFF8E9] px-2 py-1 text-[12px] font-bold text-[#B56B00]">Verified property</span>
           </div>
-          <p className="mt-3 flex items-center gap-2 text-[13px] text-[#34405A]">
-            <Icon name="location" className="h-4 w-4" />
-            {booking.location}
+          <p className="mt-2 flex items-start gap-2 text-[13px] leading-5 text-[#34405A]">
+            <Icon name="location" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0">{booking.location}</span>
           </p>
-          <div className="mt-6 grid gap-4 border-y border-[#E6EBF3] py-4 sm:grid-cols-4">
-            <Detail label="Check-in" value={formatDate(booking.checkIn)} sub="After 2:00 PM" />
-            <Detail label="Check-out" value={formatDate(booking.checkOut)} sub="Before 11:00 AM" />
-            <Detail label="Guests" value={`${booking.guests} guests`} />
-            <Detail label="Property" value={booking.bedrooms && booking.bedrooms > 1 ? "Apartment" : "Studio"} />
+          <div className="mt-4 grid grid-cols-2 gap-y-4 border-y border-[#E6EBF3] py-4 sm:grid-cols-4 sm:gap-y-0">
+            <div className="min-w-0 pr-3 sm:pr-4">
+              <Detail label="Check-in" value={formatDate(booking.checkIn)} sub="After 2:00 PM" />
+            </div>
+            <div className="min-w-0 border-l border-[#E6EBF3] pl-3 sm:px-4">
+              <Detail label="Check-out" value={formatDate(booking.checkOut)} sub="Before 11:00 AM" />
+            </div>
+            <div className="min-w-0 pr-3 sm:border-l sm:border-[#E6EBF3] sm:px-4">
+              <Detail label="Guests" value={`${booking.guests} guests`} />
+            </div>
+            <div className="min-w-0 border-l border-[#E6EBF3] pl-3 sm:pl-4">
+              <Detail label="Property" value={booking.bedrooms && booking.bedrooms > 1 ? "Apartment" : "Studio"} />
+            </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button onClick={onDirections} className="inline-flex h-10 items-center gap-2 rounded-[7px] border border-[#DDE4F0] px-5 text-[13px] font-bold">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <button onClick={onDirections} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[7px] border border-[#DDE4F0] px-5 text-[13px] font-bold transition-shadow duration-200 hover:shadow-[0_8px_18px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2 active:shadow-[0_3px_8px_rgba(15,23,42,0.08)]">
               <Icon name="location" className="h-4 w-4" />
               Get directions
             </button>
-            <button onClick={onCalendar} className="inline-flex h-10 items-center gap-2 rounded-[7px] border border-[#DDE4F0] px-5 text-[13px] font-bold">
+            <button onClick={onCalendar} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[7px] border border-[#DDE4F0] px-5 text-[13px] font-bold transition-shadow duration-200 hover:shadow-[0_8px_18px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2 active:shadow-[0_3px_8px_rgba(15,23,42,0.08)]">
               <Icon name="calendar" className="h-4 w-4" />
               Add to calendar
             </button>
@@ -585,26 +672,44 @@ function GuestDetails({ guest, onEdit }: { guest: GuestInfo; onEdit: () => void 
     <Card>
       <div className="flex items-center justify-between">
         <h2 className="text-[17px] font-bold">Guest details</h2>
-        <button onClick={onEdit} className="text-[13px] font-bold text-[#5F36E9]">Edit</button>
+        <button
+          onClick={onEdit}
+          className="rounded-[5px] px-1.5 py-1 text-[13px] font-bold text-[#5F36E9] transition-shadow duration-200 hover:shadow-[0_5px_12px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2 active:shadow-[0_2px_6px_rgba(15,23,42,0.08)]"
+        >
+          Edit
+        </button>
       </div>
-      <div className="mt-5 flex items-center gap-4">
-        <span className="grid h-16 w-16 place-items-center rounded-full bg-[#E8DDFF] text-[25px] font-bold text-[#5F36E9]">{initials(guest.fullName)}</span>
-        <div>
+      <div className="mt-4 flex items-start gap-3">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#E8DDFF] text-[21px] font-bold text-[#5F36E9]">{initials(guest.fullName)}</span>
+        <div className="min-w-0 pt-0.5">
           <p className="text-[16px] font-bold">{guest.fullName}</p>
-          <p className="mt-1 text-[13px] text-[#59637C]">{guest.email} <span className="ml-3 text-[#188A44]">Email verified</span></p>
-          <p className="mt-2 text-[13px] text-[#59637C]">{guest.phone}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-[#59637C]">
+            <span className="min-w-0 break-words">{guest.email}</span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-[#188A44]">
+              <Icon name="check" className="h-3.5 w-3.5" />
+              Email verified
+            </span>
+          </div>
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-[#59637C]">
+            <Icon name="phone" className="h-3.5 w-3.5 shrink-0" />
+            <span>{guest.phone}</span>
+          </p>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-4">
         <p className="text-[12px] font-bold text-[#34405A]">Special requests</p>
-        <div className="mt-2 rounded-[7px] border border-[#DDE4F0] bg-[#FBFCFF] p-3 text-[13px] leading-5 text-[#34405A]">
+        <div className="mt-1.5 rounded-[7px] border border-[#DDE4F0] bg-[#FBFCFF] p-3 text-[13px] leading-5 text-[#34405A]">
           {guest.requests || "No special requests added."}
         </div>
       </div>
-      <p className="mt-4 text-[12px]">
+      <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-[12px]">
+        <span className="inline-flex items-center gap-1.5 font-bold text-[#34405A]">
+          <Icon name="file" className="h-3.5 w-3.5 shrink-0" />
+          ID verification
+        </span>
         <span className="rounded-[6px] bg-[#F0ECFF] px-3 py-1 font-bold text-[#4C36B7]">Not required before confirmation</span>
-        <span className="ml-2 text-[#59637C]">You can upload ID after confirmation (optional).</span>
-      </p>
+        <span className="text-[#59637C]">You can upload ID after confirmation (optional).</span>
+      </div>
     </Card>
   );
 }
@@ -641,22 +746,26 @@ function PaymentDetails({ booking, onEdit, onUpload }: { booking: BookingPayload
 }
 
 function ImportantSteps() {
-  const steps = [
-    "DAR verifies payment receipt.",
-    "Owner receives your booking request.",
-    "You get check-in details after confirmation.",
-    "Contact support if verification takes more than 2 hours.",
-  ];
   return (
     <Card>
       <h2 className="text-[17px] font-bold">Important next steps</h2>
-      <div className="mt-5 space-y-4">
-        {steps.map((step, index) => (
-          <p key={step} className="flex items-center gap-3 text-[14px] text-[#34405A]">
-            <Icon name={index === 2 ? "mail" : index === 3 ? "headset" : "shield"} className="h-5 w-5 text-[#5F36E9]" />
-            {step}
-          </p>
-        ))}
+      <div className="mt-3.5 space-y-3">
+        <p className="flex items-start gap-2.5 text-[14px] leading-5 text-[#34405A]">
+          <ShieldCheck className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#5F36E9]" aria-hidden="true" />
+          <span>DAR verifies payment receipt.</span>
+        </p>
+        <p className="flex items-start gap-2.5 text-[14px] leading-5 text-[#34405A]">
+          <Users className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#5F36E9]" aria-hidden="true" />
+          <span>Owner receives your booking request.</span>
+        </p>
+        <p className="flex items-start gap-2.5 text-[14px] leading-5 text-[#34405A]">
+          <Icon name="mail" className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#5F36E9]" />
+          <span>You get check-in details after confirmation.</span>
+        </p>
+        <p className="flex items-start gap-2.5 text-[14px] leading-5 text-[#34405A]">
+          <Icon name="headset" className="mt-0.5 h-[18px] w-[18px] shrink-0 text-[#5F36E9]" />
+          <span>Contact support if verification takes more than 2 hours.</span>
+        </p>
       </div>
     </Card>
   );
@@ -665,37 +774,63 @@ function ImportantSteps() {
 function Policies() {
   return (
     <Card>
-      <h2 className="mb-4 flex items-center gap-2 text-[16px] font-bold">
-        <Icon name="shield" className="h-5 w-5 text-[#5F36E9]" />
-        Cancellation & policies
-      </h2>
-      <p className="text-[13px] leading-6 text-[#34405A]">Flexible cancellation before May 18, 2026.</p>
-      <p className="text-[13px] leading-6 text-[#34405A]">Manual payment refunds may take 1-3 business days.</p>
-      <p className="text-[13px] leading-6 text-[#34405A]">House rules: No smoking, no parties, ID required.</p>
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#5F36E9]" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[16px] font-bold">Cancellation & policies</h2>
+          <div className="mt-3 space-y-2 text-[13px] leading-5 text-[#34405A]">
+            <p className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#188A44]" aria-hidden="true" />
+              <span>Flexible cancellation before May 18, 2026.</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#188A44]" aria-hidden="true" />
+              <span>Manual payment refunds may take 1-3 business days.</span>
+            </p>
+            <p className="flex flex-wrap items-start gap-x-2 gap-y-1">
+              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#188A44]" aria-hidden="true" />
+              <span className="min-w-0 flex-1">House rules: No smoking, no parties, ID required.</span>
+              <Link
+                href="/legal/cancellation"
+                className="shrink-0 rounded-[4px] font-semibold text-[#5F36E9] transition-shadow duration-200 hover:shadow-[0_4px_10px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2"
+              >
+                View full policy
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
 
 function RecommendedActions({ booking }: { booking: BookingPayload }) {
   const actions = [
-    ["Complete your profile", "/profile", "user"],
-    ["Add your arrival time", "/bookings", "calendar"],
-    ["Save owner contact", "/messages", "phone"],
-    ["Explore nearby stays", `/properties/${booking.propertyId}`, "shield"],
+    ["Complete your profile", "/profile", UserRound, "purple"],
+    ["Add your arrival time", "/bookings", Clock3, "orange"],
+    ["Save owner contact", "/messages", Info, "purple"],
+    ["Explore nearby stays", `/properties/${booking.propertyId}`, ShieldCheck, "purple"],
   ] as const;
   return (
     <Card>
       <h2 className="text-[17px] font-bold">Recommended actions</h2>
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
-        {actions.map(([label, href, icon]) => (
-          <Link key={label} href={href} className="flex min-h-[74px] items-center justify-between rounded-[9px] bg-[#F8FAFC] px-4 text-[13px] font-bold hover:bg-[#F2F5FB]">
-            <span className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEE8FF] text-[#5F36E9]">
-                <Icon name={icon} className="h-5 w-5" />
-              </span>
-              {label}
+      <div className="mt-3 grid gap-2.5 sm:grid-cols-2 min-[1500px]:grid-cols-4">
+        {actions.map(([label, href, ActionIcon, tone]) => (
+          <Link
+            key={label}
+            href={href}
+            className="flex min-h-[68px] min-w-0 items-center gap-2.5 rounded-[9px] bg-[#F8FAFC] px-3 text-[13px] font-bold transition-shadow duration-200 hover:shadow-[0_8px_18px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2 active:shadow-[0_3px_8px_rgba(15,23,42,0.08)]"
+          >
+            <span
+              className={cn(
+                "grid h-9 w-9 shrink-0 place-items-center rounded-full",
+                tone === "orange" ? "bg-[#FFF1D8] text-[#E58A00]" : "bg-[#EEE8FF] text-[#5F36E9]",
+              )}
+            >
+              <ActionIcon className="h-[18px] w-[18px]" aria-hidden="true" />
             </span>
-            <Icon name="chevronRight" className="h-4 w-4" />
+            <span className="min-w-0 flex-1 leading-[18px]">{label}</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#667085]" aria-hidden="true" />
           </Link>
         ))}
       </div>
@@ -756,7 +891,13 @@ function SupportPanel() {
   );
 }
 
-function HostCard() {
+function HostCard({
+  messageOwnerHref,
+  messageOwnerUnavailableReason,
+}: {
+  messageOwnerHref: string | null;
+  messageOwnerUnavailableReason: string;
+}) {
   return (
     <Card>
       <h2 className="text-[18px] font-bold">Hosted by</h2>
@@ -769,8 +910,28 @@ function HostCard() {
           <p className="mt-2 text-[13px] text-[#59637C]">Typically responds within 20 minutes</p>
         </div>
       </div>
-      <button disabled className="mt-6 h-12 w-full rounded-[7px] border border-[#DDE4F0] bg-[#F8FAFC] text-[14px] font-bold text-[#98A2B3]">Message owner</button>
-      <p className="mt-3 text-center text-[12px] text-[#98A2B3]">You can message after confirmation.</p>
+      {messageOwnerHref ? (
+        <Link
+          href={messageOwnerHref}
+          className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-[7px] border border-[#DDE4F0] bg-[#F8FAFC] text-[14px] font-bold text-[#98A2B3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B6DFF] focus-visible:ring-offset-2"
+        >
+          Message owner
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          aria-describedby="host-message-owner-reason"
+          title={messageOwnerUnavailableReason}
+          className="mt-6 h-12 w-full rounded-[7px] border border-[#DDE4F0] bg-[#F8FAFC] text-[14px] font-bold text-[#98A2B3] disabled:cursor-not-allowed"
+        >
+          Message owner
+        </button>
+      )}
+      <p id="host-message-owner-reason" className="mt-3 text-center text-[12px] text-[#98A2B3]">
+        {messageOwnerHref ? "Open your conversation with the owner." : messageOwnerUnavailableReason}
+      </p>
     </Card>
   );
 }

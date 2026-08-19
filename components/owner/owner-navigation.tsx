@@ -85,7 +85,9 @@ export function OwnerDesktopNavigation({ propertyId, variant = "dark" }: OwnerNa
   void variant;
   return (
     <aside className="sticky top-0 flex h-screen w-[var(--sidebar-width)] shrink-0 flex-col overflow-y-auto border-r border-[var(--sidebar-dark-border)] bg-[var(--sidebar-dark-background)] px-5 pb-6 pt-7 text-[var(--sidebar-dark-foreground)] max-[900px]:hidden">
-      <DarLogo surface="dark" width={610} height={260} className="h-auto w-[132px] object-contain object-left" priority />
+      <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+        <DarLogo surface="dark" width={610} height={260} className="h-auto w-[132px] object-contain object-left" priority />
+      </Link>
       <OwnerProfileLink owner={OWNER_PROFILE_FALLBACK} className="mt-6 rounded-[var(--radius-md)] border border-[var(--sidebar-dark-border)] p-4 transition-colors hover:border-[var(--brand)] hover:bg-[var(--sidebar-dark-elevated)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] active:bg-[var(--sidebar-dark-elevated)]">
         <div className="flex items-center gap-3">
           <Image src={OWNER_PROFILE_FALLBACK.avatarUrl} alt={OWNER_PROFILE_FALLBACK.name} width={46} height={46} className="size-[46px] rounded-full object-cover" />
@@ -132,7 +134,9 @@ export function OwnerMobileNavigation({ propertyId }: Pick<OwnerNavigationProps,
           <button type="button" aria-label="Close owner navigation" className="absolute inset-0 bg-surface-dark/55" onClick={() => setOpen(false)} />
           <aside ref={drawerRef} tabIndex={-1} aria-label="Owner navigation drawer" className="absolute inset-y-0 left-0 w-[min(310px,86vw)] overflow-y-auto bg-[var(--sidebar-dark-background)] p-5 text-white shadow-[var(--shadow-card-strong)] outline-none">
             <div className="flex items-center justify-between">
-              <DarLogo surface="dark" width={610} height={260} className="h-[46px] w-[125px] object-contain object-left" />
+              <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+                <DarLogo surface="dark" width={610} height={260} className="h-[46px] w-[125px] object-contain object-left" />
+              </Link>
               <Button type="button" variant="ghost" size="sm" aria-label="Close owner navigation" onClick={() => setOpen(false)} className="size-10 px-0 text-white hover:bg-white/10 hover:text-white">
                 <X aria-hidden="true" className="size-5" />
               </Button>

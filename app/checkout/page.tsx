@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState, useSyncExternalStore } from "react";
 import { featuredProperty } from "@/app/properties/[slug]/property-data";
 import { requiredRedirectForStep } from "@/app/booking/flow-guards";
 import { compactBookingQuery, shortPath } from "@/app/routing";
@@ -91,6 +91,7 @@ function formatEgp(value: number) {
 }
 
 type CheckoutBooking = {
+  propertyId: string;
   title: string;
   location: string;
   image: string;
@@ -103,6 +104,7 @@ type CheckoutBooking = {
   cleaning: number;
   service: number;
   discount: number;
+  promoDiscount: number;
 };
 
 type PendingBookingPayload = {
@@ -118,6 +120,15 @@ type PendingBookingPayload = {
   cleaningFee?: number;
   serviceFee?: number;
   discount?: number;
+  promoCode?: string;
+  promoDiscount?: number;
+  promoStatus?: "idle" | "applied" | "invalid";
+  paymentDetails?: {
+    receiptFileName?: string;
+    receiptFileType?: string;
+    receiptFileSize?: number;
+    [key: string]: string | number | boolean | undefined;
+  };
   subtotal?: number;
   paymentMethod?: string;
   paymentId?: string;
@@ -129,6 +140,7 @@ type PendingBookingPayload = {
 };
 
 const defaultBooking: CheckoutBooking = {
+  propertyId: featuredProperty.slug,
   title: "Luxury Studio in Madinty",
   location: "B6, Madinty",
   image: "/properties/madinty-living.png",
@@ -141,10 +153,11 @@ const defaultBooking: CheckoutBooking = {
   cleaning: 250,
   service: 420,
   discount: 300,
+  promoDiscount: 0,
 };
 
 function getBookingTotal(booking: CheckoutBooking) {
-  return booking.nightly * booking.nights + booking.cleaning + booking.service - booking.discount;
+  return booking.nightly * booking.nights + booking.cleaning + booking.service - booking.discount - booking.promoDiscount;
 }
 
 function formatCheckoutDate(value: string | undefined) {
@@ -178,6 +191,7 @@ function readPendingBooking(): CheckoutBooking | null {
     const guests = pending.guests ?? 2;
 
     return {
+      propertyId: pending.propertyId ?? featuredProperty.slug,
       title: pending.title ?? defaultBooking.title,
       location: pending.location ?? defaultBooking.location,
       image: pending.image ?? defaultBooking.image,
@@ -190,6 +204,7 @@ function readPendingBooking(): CheckoutBooking | null {
       cleaning: pending.cleaningFee ?? defaultBooking.cleaning,
       service: pending.serviceFee ?? defaultBooking.service,
       discount: pending.discount ?? defaultBooking.discount,
+      promoDiscount: pending.promoDiscount ?? 0,
     };
   } catch {
     return null;
@@ -214,6 +229,16 @@ function readPendingPaymentMethod() {
   }
 }
 
+function readPendingPayload(): PendingBookingPayload | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const raw = window.sessionStorage.getItem("dar-pending-booking");
+    return raw ? (JSON.parse(raw) as PendingBookingPayload) : null;
+  } catch {
+    return null;
+  }
+}
+
 function paymentLabel(method: string) {
   const labels: Record<string, string> = {
     card: "Credit / Debit Card",
@@ -231,14 +256,52 @@ function paymentLabel(method: string) {
   return labels[method] ?? "Selected payment";
 }
 
+function subscribeToHydration() {
+  return () => undefined;
+}
+
 export default function CheckoutPage() {
+  const isHydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+  return isHydrated ? <CheckoutContent /> : null;
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const [booking] = useState(() => readPendingBooking() ?? defaultBooking);
   const [selectedPayment] = useState(readPendingPaymentMethod);
-  const [receiptUploaded, setReceiptUploaded] = useState(true);
-  const [promoCode, setPromoCode] = useState("");
-  const total = getBookingTotal(booking);
+  const initialPayload = readPendingPayload();
+  const [receiptMetadata, setReceiptMetadata] = useState(() => ({
+    name: initialPayload?.paymentDetails?.receiptFileName ?? "",
+    type: initialPayload?.paymentDetails?.receiptFileType ?? "",
+    size: Number(initialPayload?.paymentDetails?.receiptFileSize ?? 0),
+  }));
+  const [receiptError, setReceiptError] = useState("");
+  const [promoCode, setPromoCode] = useState(initialPayload?.promoCode ?? "");
+  const [promoStatus, setPromoStatus] = useState<"idle" | "applied" | "invalid">(initialPayload?.promoStatus ?? "idle");
+  const [promoDiscount, setPromoDiscount] = useState(initialPayload?.promoDiscount ?? booking.promoDiscount);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const effectiveBooking = { ...booking, promoDiscount };
+  const total = getBookingTotal(effectiveBooking);
   const needsReceipt = ["instapay", "vodafone", "fawry", "bank", "wallet"].includes(selectedPayment);
+
+  const persistCheckoutState = (extra: Partial<PendingBookingPayload>) => {
+    const current = readPendingPayload() ?? {};
+    window.sessionStorage.setItem("dar-pending-booking", JSON.stringify({ ...current, ...extra }));
+  };
+
+  const applyPromo = () => {
+    if (promoCode.trim().toUpperCase() === "DAR10") {
+      const value = Math.round(booking.nightly * booking.nights * 0.1);
+      setPromoCode("DAR10");
+      setPromoDiscount(value);
+      setPromoStatus("applied");
+      persistCheckoutState({ promoCode: "DAR10", promoDiscount: value, promoStatus: "applied" });
+    } else {
+      setPromoDiscount(0);
+      setPromoStatus("invalid");
+      persistCheckoutState({ promoCode, promoDiscount: 0, promoStatus: "invalid" });
+    }
+  };
 
   useEffect(() => {
     const redirect = requiredRedirectForStep("checkout");
@@ -246,6 +309,8 @@ export default function CheckoutPage() {
   }, [router]);
 
   const submitForVerification = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const raw = window.sessionStorage.getItem("dar-pending-booking");
     const currentBooking = raw ? (JSON.parse(raw) as PendingBookingPayload) : {};
     const pendingBooking = {
@@ -261,6 +326,9 @@ export default function CheckoutPage() {
       cleaningFee: currentBooking.cleaningFee ?? booking.cleaning,
       serviceFee: currentBooking.serviceFee ?? booking.service,
       discount: currentBooking.discount ?? booking.discount,
+      promoCode,
+      promoDiscount,
+      promoStatus,
       subtotal: currentBooking.subtotal ?? booking.nightly * booking.nights,
       total,
       currency: currentBooking.currency ?? "EGP",
@@ -270,7 +338,13 @@ export default function CheckoutPage() {
       paymentSubmitted: true,
       bookingStatus: "request_received",
       paymentSubmittedAt: new Date().toISOString(),
-      receiptStatus: needsReceipt ? "pending_review" : "not_required",
+      receiptStatus: needsReceipt && receiptMetadata.name ? "pending_review" : "not_required",
+      paymentDetails: {
+        ...currentBooking.paymentDetails,
+        receiptFileName: receiptMetadata.name,
+        receiptFileType: receiptMetadata.type,
+        receiptFileSize: receiptMetadata.size,
+      },
       bookingReference: "DAR-MAD-58291",
     };
 
@@ -323,14 +397,14 @@ export default function CheckoutPage() {
               English / EGP
               <Icon name="chevronDown" className="h-4 w-4" />
             </button>
-            <button className="hidden h-10 items-center gap-2 rounded-lg border border-[#DDE3EE] bg-white px-4 text-[14px] font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:border-[#C8D0E0] sm:inline-flex">
+            <Link href="/help" className="hidden h-10 items-center gap-2 rounded-lg border border-[#DDE3EE] bg-white px-4 text-[14px] font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_6px_18px_rgba(15,23,42,.12)] sm:inline-flex">
               <Icon name="help" className="h-[18px] w-[18px]" />
               Help
-            </button>
-            <button className="hidden h-10 items-center gap-2 rounded-lg border border-[#DDE3EE] bg-white px-4 text-[14px] font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:border-[#C8D0E0] sm:inline-flex">
+            </Link>
+            <Link href="/login" className="hidden h-10 items-center gap-2 rounded-lg border border-[#DDE3EE] bg-white px-4 text-[14px] font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_6px_18px_rgba(15,23,42,.12)] sm:inline-flex">
               <Icon name="user" className="h-[18px] w-[18px]" />
               Sign in
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -363,11 +437,14 @@ export default function CheckoutPage() {
 
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_470px]">
           <div className="space-y-5">
-            <VerificationStatus selectedPayment={selectedPayment} needsReceipt={needsReceipt} />
+            <VerificationStatus selectedPayment={selectedPayment} needsReceipt={needsReceipt} hasReceipt={Boolean(receiptMetadata.name)} />
             {needsReceipt ? (
               <ReceiptVerification
-                receiptUploaded={receiptUploaded}
-                setReceiptUploaded={setReceiptUploaded}
+                receiptMetadata={receiptMetadata}
+                setReceiptMetadata={setReceiptMetadata}
+                error={receiptError}
+                setError={setReceiptError}
+                persist={(metadata) => persistCheckoutState({ paymentDetails: { ...(readPendingPayload()?.paymentDetails ?? {}), receiptFileName: metadata.name, receiptFileType: metadata.type, receiptFileSize: metadata.size } })}
               />
             ) : null}
             <VerificationTimeline needsReceipt={needsReceipt} />
@@ -375,10 +452,14 @@ export default function CheckoutPage() {
 
           <aside className="space-y-5 xl:sticky xl:top-5 xl:self-start">
             <OrderSummary
-              booking={booking}
+              booking={effectiveBooking}
               total={total}
               promoCode={promoCode}
               setPromoCode={setPromoCode}
+              promoStatus={promoStatus}
+              promoDiscount={promoDiscount}
+              applyPromo={applyPromo}
+              selectedPayment={selectedPayment}
             />
             <ProtectionCard />
             <OwnerPayoutCard />
@@ -395,10 +476,11 @@ export default function CheckoutPage() {
           </Link>
           <button
             onClick={submitForVerification}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#5F36E9] px-8 text-[14px] font-bold text-white shadow-[0_10px_22px_rgba(95,54,233,0.22)] transition hover:bg-[#4E2DEF] disabled:cursor-not-allowed disabled:bg-[#AFA0F4] md:w-[430px]"
+            disabled={isSubmitting}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[8px] bg-[#5F36E9] px-8 text-[14px] font-bold text-white shadow-[0_10px_22px_rgba(95,54,233,0.22)] transition-shadow hover:shadow-[0_14px_28px_rgba(95,54,233,.28)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-[0_10px_22px_rgba(95,54,233,0.22)] md:w-[430px]"
           >
             <Icon name="lock" className="h-4 w-4" />
-            Submit payment for verification
+            {isSubmitting ? "Submitting…" : "Submit payment for verification"}
           </button>
         </div>
         <p className="mt-2 text-center text-[12px] font-medium text-[#667085]">
@@ -480,10 +562,10 @@ function BookingDetails({ booking }: { booking: CheckoutBooking }) {
     <Card className="mb-3">
       <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className="text-[15px] font-bold text-[#111735]">Your booking details</h2>
-        <button className="inline-flex items-center gap-1 text-[12px] font-bold text-[#5F36E9] hover:text-[#4E2DEF]">
+        <Link href={`/properties/${booking.propertyId}`} className="inline-flex items-center gap-1 text-[12px] font-bold text-[#5F36E9] focus-visible:outline-2 focus-visible:outline-[#5F36E9]">
           Change details
           <span aria-hidden="true">✎</span>
-        </button>
+        </Link>
       </div>
       <div className="grid gap-4 md:grid-cols-[210px_minmax(170px,1fr)_repeat(4,minmax(120px,1fr))] md:items-center">
         <div className="relative h-[78px] overflow-hidden rounded-[8px] bg-[#EEF2F8]">
@@ -505,9 +587,11 @@ function BookingDetails({ booking }: { booking: CheckoutBooking }) {
 function VerificationStatus({
   selectedPayment,
   needsReceipt,
+  hasReceipt,
 }: {
   selectedPayment: string;
   needsReceipt: boolean;
+  hasReceipt: boolean;
 }) {
   return (
     <Card>
@@ -523,12 +607,14 @@ function VerificationStatus({
         <div className="rounded-[10px] border border-[#F4D9A5] bg-[#FFFCF6] p-4">
           <p className="text-[12px] font-semibold text-[#A15C08]">Current status</p>
           <p className="mt-2 text-[18px] font-bold text-[#111735]">
-            {needsReceipt ? "Receipt pending review" : "Ready for verification"}
+            {needsReceipt && hasReceipt ? "Receipt pending review" : "Ready for verification"}
           </p>
           <p className="mt-2 text-[13px] leading-5 text-[#667085]">
-            {needsReceipt
+            {needsReceipt && hasReceipt
               ? "DAR will verify the uploaded receipt before confirming the booking."
-              : "DAR will submit your payment details for verification before holding the booking."}
+              : needsReceipt
+                ? "You may add an optional receipt before submitting these local payment details for review."
+                : "DAR will submit your payment details for verification before holding the booking."}
           </p>
         </div>
       </div>
@@ -614,12 +700,36 @@ function SectionTitle({
 }
 
 function ReceiptVerification({
-  receiptUploaded,
-  setReceiptUploaded,
+  receiptMetadata,
+  setReceiptMetadata,
+  error,
+  setError,
+  persist,
 }: {
-  receiptUploaded: boolean;
-  setReceiptUploaded: (value: boolean) => void;
+  receiptMetadata: { name: string; type: string; size: number };
+  setReceiptMetadata: (value: { name: string; type: string; size: number }) => void;
+  error: string;
+  setError: (value: string) => void;
+  persist: (value: { name: string; type: string; size: number }) => void;
 }) {
+  const selectReceipt = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type)) {
+      setError("Choose a JPG, PNG, WEBP, or PDF file.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Receipt files must be 10 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+    const metadata = { name: file.name, type: file.type, size: file.size };
+    setReceiptMetadata(metadata);
+    setError("");
+    persist(metadata);
+  };
   return (
     <Card>
       <SectionTitle index="3." title="Upload receipt & verification" />
@@ -627,21 +737,22 @@ function ReceiptVerification({
         <label className="flex min-h-[230px] cursor-pointer flex-col items-center justify-center rounded-[10px] border border-dashed border-[#8D6BFF] bg-[#FBFAFF] px-5 text-center hover:bg-[#F7F3FF]">
           <input
             type="file"
-            accept="image/*,.pdf"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
             className="sr-only"
-            onChange={() => setReceiptUploaded(true)}
+            onChange={selectReceipt}
           />
           <Icon name="upload" className="h-10 w-10 text-[#5F36E9]" />
           <p className="mt-5 text-[13px] font-bold text-[#111735]">Drag & drop your receipt here</p>
           <p className="mt-1 text-[11px] font-medium text-[#667085]">PNG, JPG or PDF up to 10MB</p>
           <p className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#16A25D]">
             <Icon name="check" className="h-4 w-4" />
-            {receiptUploaded ? "Receipt uploaded" : "Ready for receipt"}
+            {receiptMetadata.name || "Ready for receipt"}
           </p>
           <span className="mt-3 rounded-md bg-[#FEF3C7] px-3 py-1 text-[11px] font-semibold text-[#9A5B07]">
             Pending review
           </span>
         </label>
+        {error ? <p role="alert" className="text-[12px] font-semibold text-[#D92D20] md:col-span-2">{error}</p> : null}
 
         <div className="grid gap-3">
           <Field label="Sender full name" required defaultValue="Omar Nabil" />
@@ -721,18 +832,26 @@ function OrderSummary({
   total,
   promoCode,
   setPromoCode,
+  promoStatus,
+  promoDiscount,
+  applyPromo,
+  selectedPayment,
 }: {
   booking: CheckoutBooking;
   total: number;
   promoCode: string;
   setPromoCode: (value: string) => void;
+  promoStatus: "idle" | "applied" | "invalid";
+  promoDiscount: number;
+  applyPromo: () => void;
+  selectedPayment: string;
 }) {
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-[18px] font-bold text-[#111735]">Order summary</h2>
         <span className="rounded-[7px] bg-[#DCFCE7] px-3 py-1.5 text-[12px] font-semibold text-[#168B4B]">
-          Awaiting InstaPay receipt
+          {paymentLabel(selectedPayment)} selected
         </span>
       </div>
       <div className="mt-5 flex gap-4">
@@ -758,6 +877,7 @@ function OrderSummary({
         <PriceLine label="Cleaning fee" value={formatEgp(booking.cleaning)} />
         <PriceLine label="DAR service fee" value={formatEgp(booking.service)} />
         <PriceLine label="Launch discount" value={`- ${formatEgp(booking.discount)}`} discount />
+        {promoDiscount > 0 ? <PriceLine label="DAR10 promo" value={`- ${formatEgp(promoDiscount)}`} discount /> : null}
       </div>
 
       <div className="mt-4 flex items-start justify-between">
@@ -777,10 +897,11 @@ function OrderSummary({
             placeholder="Enter code"
             className="h-11 min-w-0 flex-1 rounded-[8px] border border-[#DCE3EF] px-3 text-[13px] font-semibold outline-none focus:border-[#8D6BFF]"
           />
-          <button className="h-11 rounded-[8px] bg-[#5F36E9] px-7 text-[14px] font-bold text-white hover:bg-[#4E2DEF]">
+          <button type="button" onClick={applyPromo} className="h-11 rounded-[8px] bg-[#5F36E9] px-7 text-[14px] font-bold text-white transition-shadow hover:shadow-[0_8px_20px_rgba(95,54,233,.24)]">
             Apply
           </button>
         </div>
+        {promoStatus !== "idle" ? <p aria-live="polite" className={cn("mt-2 text-[11px] font-semibold", promoStatus === "applied" ? "text-[#168B4B]" : "text-[#D92D20]")}>{promoStatus === "applied" ? `DAR10 applied: ${formatEgp(promoDiscount)} local demo discount.` : "This promo code is not available."}</p> : null}
       </div>
     </Card>
   );
@@ -826,9 +947,9 @@ function ProtectionCard() {
             </p>
           </div>
         </div>
-        <button className="mt-4 h-10 w-full rounded-[8px] border border-[#744BFF] text-[13px] font-bold text-[#5F36E9] hover:bg-[#F5F2FF]">
+        <Link href="/help" className="mt-4 flex h-10 w-full items-center justify-center rounded-[8px] border border-[#744BFF] text-[13px] font-bold text-[#5F36E9] transition-shadow hover:shadow-[0_6px_18px_rgba(15,23,42,.1)]">
           Contact DAR support
-        </button>
+        </Link>
       </div>
     </Card>
   );

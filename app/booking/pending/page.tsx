@@ -510,7 +510,9 @@ function TopBar() {
         <button aria-label="Open menu">
           <Icon name="menu" className="h-6 w-6" />
         </button>
-        <Image src="/dar-logo-purple-header.png" alt="DAR" width={320} height={142} className="h-[38px] w-auto" />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <Image src="/dar-logo-purple-header.png" alt="DAR" width={320} height={142} className="h-[38px] w-auto" />
+        </Link>
       </div>
       <div className="hidden xl:block" />
       <div className="flex items-center gap-7">

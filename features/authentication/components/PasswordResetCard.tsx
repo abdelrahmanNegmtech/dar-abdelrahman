@@ -69,7 +69,9 @@ export function PasswordResetCard({ initialError = "" }: PasswordResetCardProps)
   return (
     <section className="auth-card-reset w-full max-w-[390px] rounded-[32px] border border-[#E5E7EB] bg-white px-6 py-8 shadow-[0_26px_90px_rgba(15,23,42,0.16)] sm:max-w-[604px] sm:px-10 sm:py-10 lg:max-w-[604px] lg:px-[52px] lg:py-[44px]">
       <div className="mb-10 flex items-center justify-between lg:hidden">
-        <BrandLogo compact />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <BrandLogo compact />
+        </Link>
         <Link
           className="text-sm font-bold text-[#6C3DFF] transition hover:text-[#5A30E8] focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF] focus-visible:ring-offset-2"
           href="/login"

@@ -7,7 +7,9 @@ export function LoginCard() {
   return (
     <section className="auth-card-login w-full max-w-[390px] rounded-[32px] border border-[#E5E7EB] bg-white px-6 py-8 shadow-[0_26px_90px_rgba(15,23,42,0.16)] sm:max-w-[560px] sm:px-9 sm:py-10 lg:max-w-[572px] lg:px-[48px] lg:py-[52px]">
       <div className="mb-11 flex items-center justify-center lg:hidden">
-        <BrandLogo compact />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <BrandLogo compact />
+        </Link>
       </div>
 
       <header className="auth-card-header mb-8 lg:mb-[34px]">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -37,9 +38,11 @@ const recoveryFeatures = [
 
 export function ForgotPasswordHero() {
   return (
-    <aside className="auth-hero-panel relative z-10 hidden h-full min-h-0 w-[34.1%] min-w-[500px] overflow-hidden px-10 py-9 text-white lg:flex">
+    <aside className="auth-hero-panel relative z-10 hidden h-full min-h-0 overflow-hidden px-10 py-9 text-white lg:flex lg:w-[42.2%] lg:min-w-[492px]">
       <div className="relative z-10 flex min-h-full w-full flex-col">
-        <BrandLogo inverted />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <BrandLogo inverted />
+        </Link>
 
         <div className="mt-[54px] max-w-[360px]">
           <h2 className="text-[44px] font-bold leading-[1.12] tracking-normal text-white">

@@ -4,6 +4,7 @@ export const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] text-sm font-semibold",
     "transition-[color,background-color,border-color,box-shadow,transform] duration-[180ms,180ms,180ms,220ms,180ms] ease",
+    "[.owner-dashboard-content_&]:hover:shadow-[var(--shadow-card-hover)]",
     "focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
     "disabled:pointer-events-none disabled:opacity-50",
   ].join(" "),
@@ -11,23 +12,23 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-brand text-white shadow-[0_10px_24px_rgba(86,49,216,0.28)] hover:bg-brand-strong active:scale-[0.98]",
+          "bg-brand text-white shadow-[0_10px_24px_rgba(86,49,216,0.28)] hover:bg-brand-strong [.owner-dashboard-content_&]:hover:bg-brand [.owner-dashboard-content_&]:hover:text-white active:scale-[0.98]",
         secondary:
-          "bg-brand-soft text-brand hover:bg-[#ddd6ff] hover:text-brand-strong active:scale-[0.98]",
+          "bg-brand-soft text-brand hover:bg-[#ddd6ff] hover:text-brand-strong [.owner-dashboard-content_&]:hover:bg-brand-soft [.owner-dashboard-content_&]:hover:text-brand active:scale-[0.98]",
         outline:
-          "border border-border bg-white text-foreground shadow-[0_3px_8px_rgba(16,25,58,0.06)] hover:border-brand/45 hover:text-brand active:scale-[0.98]",
+          "border border-border bg-white text-foreground shadow-[0_3px_8px_rgba(16,25,58,0.06)] hover:border-brand/45 hover:text-brand [.owner-dashboard-content_&]:hover:border-border [.owner-dashboard-content_&]:hover:bg-white [.owner-dashboard-content_&]:hover:text-foreground active:scale-[0.98]",
         ghost:
-          "bg-transparent text-foreground-muted hover:bg-surface-strong hover:text-foreground active:scale-[0.98]",
+          "bg-transparent text-foreground-muted hover:bg-surface-strong hover:text-foreground [.owner-dashboard-content_&]:hover:bg-transparent [.owner-dashboard-content_&]:hover:text-foreground-muted active:scale-[0.98]",
         success:
-          "bg-success text-white shadow-[0_10px_24px_rgba(22,163,74,0.28)] hover:brightness-95 active:scale-[0.98]",
+          "bg-success text-white shadow-[0_10px_24px_rgba(22,163,74,0.28)] hover:brightness-95 [.owner-dashboard-content_&]:hover:brightness-100 active:scale-[0.98]",
         warning:
-          "bg-warning text-white shadow-[0_10px_24px_rgba(168,106,0,0.28)] hover:brightness-95 active:scale-[0.98]",
+          "bg-warning text-white shadow-[0_10px_24px_rgba(168,106,0,0.28)] hover:brightness-95 [.owner-dashboard-content_&]:hover:brightness-100 active:scale-[0.98]",
         "warning-outline":
-          "border border-warning/40 bg-warning-soft text-warning hover:bg-[#ffeec4] active:scale-[0.98]",
+          "border border-warning/40 bg-warning-soft text-warning hover:bg-[#ffeec4] [.owner-dashboard-content_&]:hover:bg-warning-soft [.owner-dashboard-content_&]:hover:text-warning active:scale-[0.98]",
         danger:
-          "bg-danger text-white shadow-[0_10px_24px_rgba(239,68,68,0.28)] hover:brightness-95 active:scale-[0.98]",
+          "bg-danger text-white shadow-[0_10px_24px_rgba(239,68,68,0.28)] hover:brightness-95 [.owner-dashboard-content_&]:hover:brightness-100 active:scale-[0.98]",
         "danger-outline":
-          "border border-danger/40 bg-danger-soft text-danger hover:bg-[#ffd4d4] active:scale-[0.98]",
+          "border border-danger/40 bg-danger-soft text-danger hover:bg-[#ffd4d4] [.owner-dashboard-content_&]:hover:bg-danger-soft [.owner-dashboard-content_&]:hover:text-danger active:scale-[0.98]",
       },
       size: {
         sm: "h-9 gap-1.5 rounded-[var(--radius-sm)] px-3.5 text-xs",

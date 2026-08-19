@@ -2,14 +2,16 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/supabase/config";
-import type { LoginInput, OAuthProvider, SignUpInput } from "../authTypes";
+import type { LoginInput, OAuthProvider, PhoneSignUpInput, SignUpInput } from "../authTypes";
 import { logAuthError, mapAuthError, mapOAuthError } from "./authErrors";
 import { getRoleDestination } from "./authRedirects";
 import {
   normalizeAccountType,
   validateEmail,
+  validateFullName,
   validateOptionalPhone,
   validatePassword,
+  validatePhone,
 } from "./authValidation";
 import { getCountryByCode } from "../data/countries";
 
@@ -126,7 +128,7 @@ export async function signUpWithEmail(input: SignUpInput) {
     const safeAccountType = normalizeAccountType(accountType);
     const selectedCountry = getCountryByCode(countryCode);
 
-    if (!normalizedFullName || !validateEmail(normalizedEmail) || !validatePassword(password)) {
+    if (!validateFullName(normalizedFullName) || !validateEmail(normalizedEmail) || !validatePassword(password)) {
       return {
         data: { session: null, user: null },
         err: "Please check your name, email, and password.",
@@ -170,6 +172,13 @@ export async function signUpWithEmail(input: SignUpInput) {
       return { data: result.data, err: mapAuthError(result.error) };
     }
 
+    if (result.data.user && result.data.user.identities?.length === 0) {
+      return {
+        data: result.data,
+        err: "An account with this email already exists. Please sign in instead.",
+      };
+    }
+
     return { data: result.data, err: null };
   } catch (error) {
     logAuthError("email signup transport failed", error);
@@ -177,6 +186,108 @@ export async function signUpWithEmail(input: SignUpInput) {
       data: { session: null, user: null },
       err: mapAuthError(error),
     };
+  }
+}
+
+function mapPhoneError(error: unknown) {
+  const mapped = mapAuthError(error);
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+
+  if (message.includes("phone provider") || message.includes("sms provider") || message.includes("phone signups are disabled")) {
+    return "Phone registration is not configured yet.";
+  }
+
+  if (message.includes("token") || message.includes("otp") || message.includes("expired")) {
+    return "The verification code is invalid or expired. Please request a new code.";
+  }
+
+  return mapped;
+}
+
+export async function requestPhoneSignUpCode(input: PhoneSignUpInput) {
+  try {
+    const selectedCountry = getCountryByCode(input.countryCode);
+    const safeAccountType = normalizeAccountType(input.accountType);
+    const normalizedFullName = input.fullName.trim();
+    const normalizedPhone = input.phone.trim();
+
+    if (!validateFullName(normalizedFullName) || !validatePhone(normalizedPhone)) {
+      return { err: "Please enter a valid name and phone number." };
+    }
+
+    if (!selectedCountry || selectedCountry.name !== input.countryName || selectedCountry.dialingCode !== input.dialingCode) {
+      return { err: "Please select a valid country." };
+    }
+
+    const supabase = getClient();
+    const result = await supabase.auth.signInWithOtp({
+      phone: normalizedPhone,
+      options: {
+        data: {
+          account_type: safeAccountType,
+          country_code: input.countryCode,
+          country_name: input.countryName,
+          dialing_code: input.dialingCode,
+          full_name: normalizedFullName,
+          phone: normalizedPhone,
+        },
+        shouldCreateUser: true,
+      },
+    });
+
+    if (result.error) {
+      logAuthError("phone signup code request failed", result.error);
+      return { err: mapPhoneError(result.error) };
+    }
+
+    return { err: null };
+  } catch (error) {
+    logAuthError("phone signup code request transport failed", error);
+    return { err: mapPhoneError(error) };
+  }
+}
+
+export async function verifyPhoneSignUpCode(phone: string, token: string) {
+  try {
+    if (!validatePhone(phone) || !/^\d{6}$/.test(token.trim())) {
+      return { data: { session: null, user: null }, err: "Enter the 6-digit verification code." };
+    }
+
+    const supabase = getClient();
+    const result = await supabase.auth.verifyOtp({ phone, token: token.trim(), type: "sms" });
+
+    if (result.error) {
+      logAuthError("phone signup code verification failed", result.error);
+      return { data: result.data, err: mapPhoneError(result.error) };
+    }
+
+    if (!result.data.user || !result.data.session) {
+      return { data: result.data, err: "Unable to start a session. Please try again." };
+    }
+
+    const metadata = result.data.user.user_metadata;
+    const accountType = normalizeAccountType(metadata?.account_type);
+    const profile = {
+      account_type: accountType,
+      country_code: metadata?.country_code ?? null,
+      country_name: metadata?.country_name ?? null,
+      dialing_code: metadata?.dialing_code ?? null,
+      full_name: metadata?.full_name ?? null,
+      id: result.data.user.id,
+      phone,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: profileError } = await supabase.from("profiles").upsert(profile, { onConflict: "id" });
+
+    if (profileError) {
+      logAuthError("phone signup profile sync failed", profileError);
+      return { data: result.data, err: "Your account could not be fully created. Please contact support." };
+    }
+
+    return { data: result.data, err: null };
+  } catch (error) {
+    logAuthError("phone signup verification transport failed", error);
+    return { data: { session: null, user: null }, err: mapPhoneError(error) };
   }
 }
 

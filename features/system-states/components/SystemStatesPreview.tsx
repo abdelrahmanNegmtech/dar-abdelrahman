@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { EmptyBookingsState } from "./EmptyBookingsState";
 import { EmptyMessagesState } from "./EmptyMessagesState";
 import { EmptyOwnerListingsState } from "./EmptyOwnerListingsState";
@@ -32,9 +33,9 @@ export function SystemStatesPreview() {
         <header className="bg-[#06111F] px-5 py-5 text-white sm:px-8 lg:px-10">
           <div className="mx-auto flex max-w-[1760px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-5">
-              <div className="dar-logo-frame h-[56px] w-[156px]">
+              <Link aria-label="Go to DAR homepage" className="dar-logo-frame h-[56px] w-[156px]" href="/">
                 <Image alt="DAR logo" className="dar-logo-image dar-logo-image-dark w-[152px]" height={864} priority src="/assets/images/dar-logo.png" width={1536} />
-              </div>
+              </Link>
               <span className="hidden h-12 w-px bg-white/16 sm:block" />
               <div>
                 <h1 className="text-[28px] font-black">DAR UI States</h1>

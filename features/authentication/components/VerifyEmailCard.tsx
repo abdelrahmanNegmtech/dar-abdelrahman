@@ -51,7 +51,9 @@ export function VerifyEmailCard({ email = "" }: VerifyEmailCardProps) {
   return (
     <section className="auth-card-verify w-full max-w-[390px] rounded-[32px] border border-[#E5E7EB] bg-white px-6 py-8 text-center shadow-[0_26px_90px_rgba(15,23,42,0.16)] sm:max-w-[580px] sm:px-10 sm:py-10 lg:max-w-[580px] lg:px-[58px] lg:py-[48px]">
       <div className="mb-10 flex items-center justify-between lg:hidden">
-        <BrandLogo compact />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <BrandLogo compact />
+        </Link>
         <button
           className="inline-flex items-center gap-2 text-sm font-bold text-[#6C3DFF] transition hover:text-[#5A30E8] focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF] focus-visible:ring-offset-2"
           onClick={() => setHelpOpen((current) => !current)}

@@ -12,6 +12,15 @@ export type SignUpInput = {
   phone?: string;
 };
 
+export type PhoneSignUpInput = {
+  accountType: AccountType;
+  countryCode: string;
+  countryName: string;
+  dialingCode: string;
+  fullName: string;
+  phone: string;
+};
+
 export type LoginInput = {
   email: string;
   password: string;

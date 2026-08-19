@@ -2,11 +2,12 @@
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { properties } from "../data";
+import { SearchProperty } from "../data";
 import { ExpandIcon, MapPinIcon, RefreshCwIcon, SearchIcon } from "../icons";
 
 type MapPanelProps = {
   focused?: boolean;
+  properties: SearchProperty[];
 };
 
 type LatLngLiteral = {
@@ -79,7 +80,7 @@ const GOOGLE_MAPS_SCRIPT_ID = "dar-google-maps-js";
 
 let googleMapsPromise: Promise<GoogleMapsApi> | null = null;
 
-export function MapPanel({ focused = false }: MapPanelProps) {
+export function MapPanel({ focused = false, properties }: MapPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -169,7 +170,7 @@ export function MapPanel({ focused = false }: MapPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [destination, focused, updateUrl]);
+  }, [destination, focused, properties, updateUrl]);
 
   function recenter() {
     mapRef.current?.setCenter(MAP_CENTER);
@@ -178,6 +179,13 @@ export function MapPanel({ focused = false }: MapPanelProps) {
     setSelectedPlace("Madinaty");
     setMessage("");
     updateUrl("Madinaty");
+  }
+
+  function toggleFocusedMap() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (focused) params.delete("view");
+    else params.set("view", "map");
+    router.push(`/search?${params.toString()}`);
   }
 
   function search(event: FormEvent<HTMLFormElement>) {
@@ -275,7 +283,7 @@ export function MapPanel({ focused = false }: MapPanelProps) {
           <button
             aria-label={focused ? "Exit full map view" : "Open full map view"}
             className="flex size-11 items-center justify-center"
-            onClick={() => router.push(focused ? "/search" : "/search?view=map")}
+            onClick={toggleFocusedMap}
             type="button"
           >
             <ExpandIcon className="size-5" />

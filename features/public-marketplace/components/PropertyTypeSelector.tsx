@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { BuildingIcon, HouseIcon } from "@/components/ui";
 
 const propertyTypes = [
@@ -16,8 +13,12 @@ const propertyTypes = [
   },
 ];
 
-export function PropertyTypeSelector() {
-  const [activeType, setActiveType] = useState(propertyTypes[0].title);
+type PropertyTypeSelectorProps = {
+  activeType: string;
+  onChange: (type: string) => void;
+};
+
+export function PropertyTypeSelector({ activeType, onChange }: PropertyTypeSelectorProps) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -34,7 +35,7 @@ export function PropertyTypeSelector() {
                 : "border-white/18 bg-white/12 text-white hover:bg-white/16"
             }`}
             key={type.title}
-            onClick={() => setActiveType(type.title)}
+            onClick={() => onChange(type.title)}
             type="button"
           >
             <span

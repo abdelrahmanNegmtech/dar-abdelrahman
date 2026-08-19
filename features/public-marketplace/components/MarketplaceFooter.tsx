@@ -42,16 +42,16 @@ const footerColumns = [
 ];
 
 const socials = [
-  { href: "/contact", label: "Facebook", text: "f" },
-  { href: "/contact", label: "Instagram", text: "ig" },
-  { href: "/contact", label: "X", text: "x" },
-  { href: "/contact", label: "LinkedIn", text: "in" },
+  { label: "Facebook", text: "f" },
+  { label: "Instagram", text: "ig" },
+  { label: "X", text: "x" },
+  { label: "LinkedIn", text: "in" },
 ];
 
 export function MarketplaceFooter() {
   return (
-    <footer className="bg-white px-5 pb-5 pt-9 sm:px-8 lg:px-12 xl:px-8 2xl:px-9">
-      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-2xl bg-[#06111F] text-white shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
+    <footer className="w-full bg-[#06111F] text-white">
+      <div className="mx-auto max-w-[1500px] overflow-hidden">
         <div className="grid gap-9 px-7 py-9 sm:px-10 lg:grid-cols-[1.2fr_repeat(4,1fr)] lg:px-10 xl:gap-6 xl:px-8 xl:py-8">
           <div>
             <Link aria-label="DAR home" className="dar-logo-frame inline-flex h-[56px] w-[156px]" href="/">
@@ -68,14 +68,14 @@ export function MarketplaceFooter() {
             </p>
             <div className="mt-5 flex gap-2">
               {socials.map((social) => (
-                <Link
-                  aria-label={`DAR on ${social.label}`}
-                  className="flex size-8 items-center justify-center rounded-full text-[13px] font-bold text-white/82 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                  href={social.href}
+                <span
+                  aria-label={`${social.label} profile unavailable`}
+                  className="flex size-8 items-center justify-center rounded-full text-[13px] font-bold text-white/82"
                   key={social.label}
+                  role="img"
                 >
                   {social.text}
-                </Link>
+                </span>
               ))}
             </div>
           </div>

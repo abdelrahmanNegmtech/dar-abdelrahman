@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { BrandLogo } from "./BrandLogo";
-import { AuthSegmentedControl } from "./AuthSegmentedControl";
+import { AuthSegmentedControl, type RegistrationMethod } from "./AuthSegmentedControl";
 import { SignUpForm } from "./SignUpForm";
 
 type SignUpCardProps = {
@@ -8,10 +11,14 @@ type SignUpCardProps = {
 };
 
 export function SignUpCard({ accountType = "guest" }: SignUpCardProps) {
+  const [registrationMethod, setRegistrationMethod] = useState<RegistrationMethod>("email");
+
   return (
     <section className="auth-card-signup w-full max-w-[390px] rounded-[32px] border border-[#E5E7EB] bg-white px-6 py-8 shadow-[0_26px_90px_rgba(15,23,42,0.16)] sm:max-w-[610px] sm:px-9 sm:py-10 lg:max-w-[616px] lg:px-[64px] lg:py-[40px]">
       <div className="mb-9 flex items-center justify-center lg:hidden">
-        <BrandLogo compact />
+        <Link aria-label="Go to DAR homepage" href="/">
+          <BrandLogo compact />
+        </Link>
       </div>
 
       <header className="auth-card-header mb-6">
@@ -24,10 +31,10 @@ export function SignUpCard({ accountType = "guest" }: SignUpCardProps) {
       </header>
 
       <div className="auth-segmented-wrap mb-6">
-        <AuthSegmentedControl />
+        <AuthSegmentedControl onChange={setRegistrationMethod} value={registrationMethod} />
       </div>
 
-      <SignUpForm accountType={accountType} />
+      <SignUpForm accountType={accountType} key={registrationMethod} method={registrationMethod} />
 
       <p className="mt-7 text-center text-[15px] text-[#64748B]">
         Already have an account?{" "}

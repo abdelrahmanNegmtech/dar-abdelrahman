@@ -17,8 +17,6 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
       card={<SignUpCard accountType={accountType} />}
       cardMaxWidthClassName="max-w-[616px]"
       hero={<SignUpHero />}
-      imageObjectPosition="object-[39%_50%]"
-      overlayClassName="bg-[#4B2CBE]/22"
     />
   );
 }

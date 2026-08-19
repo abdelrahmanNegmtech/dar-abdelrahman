@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   LockIcon,
   RefreshCwIcon,
@@ -28,7 +29,9 @@ export function PasswordResetHero() {
   return (
     <aside className="auth-hero-panel relative z-10 hidden h-full min-h-0 overflow-hidden p-[42px] text-white lg:flex lg:w-[42.2%] lg:min-w-[492px] xl:p-[42px]">
       <div className="flex min-h-full w-full flex-col">
-        <BrandLogo inverted />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <BrandLogo inverted />
+        </Link>
 
         <div className="mt-[82px] max-w-[365px]">
           <h2 className="text-[32px] font-bold leading-[1.26] tracking-normal text-white xl:text-[34px]">

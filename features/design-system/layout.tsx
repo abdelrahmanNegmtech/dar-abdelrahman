@@ -1,6 +1,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronDown, ChevronRight, Headphones, Search, Shield } from "lucide-react";
 
 import { cn } from "@/features/design-system/lib/cn";
@@ -394,14 +395,16 @@ export function AdminBrand() {
   return (
     <div className="space-y-5">
       <div className="flex justify-center pb-0.5">
-        <Image
-          src="/dar-logo.svg"
-          alt="DAR"
-          width={94}
-          height={29}
-          priority
-          className="h-auto w-[94px]"
-        />
+        <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+          <Image
+            src="/dar-logo.svg"
+            alt="DAR"
+            width={94}
+            height={29}
+            priority
+            className="h-auto w-[94px]"
+          />
+        </Link>
       </div>
 
       <div

@@ -32,13 +32,31 @@ export function ForgotPasswordRequestCard({
   const [country, setCountry] = useState<CountryOption | null>(defaultCountry);
   const [phone, setPhone] = useState("");
   const [localError, setLocalError] = useState("");
+  const [localNotice, setLocalNotice] = useState("");
+
+  function selectMethod(nextMethod: "email" | "phone") {
+    setMethod(nextMethod);
+    setLocalError("");
+    setLocalNotice("");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLocalError("");
+    setLocalNotice("");
 
     if (method === "phone") {
-      setLocalError("Phone and WhatsApp OTP are not available yet. Please use email recovery.");
+      if (!phone) {
+        setLocalError("Please enter your phone number.");
+        return;
+      }
+
+      if (phone.length < 7 || phone.length > 15) {
+        setLocalError("Enter a valid phone number containing 7 to 15 digits.");
+        return;
+      }
+
+      setLocalNotice("Phone recovery will be available after authentication backend integration.");
       return;
     }
 
@@ -74,7 +92,7 @@ export function ForgotPasswordRequestCard({
               ? "rounded-[5px] border border-[#C8B7FF] bg-[#F7F2FF] font-bold text-[#5E2FE5]"
               : "font-semibold text-[#475569]"
           }`}
-          onClick={() => setMethod("email")}
+          onClick={() => selectMethod("email")}
           type="button"
         >
           <MailIcon className="size-5" />
@@ -82,9 +100,12 @@ export function ForgotPasswordRequestCard({
         </button>
         <button
           aria-pressed={method === "phone"}
-          className="inline-flex cursor-not-allowed items-center justify-center gap-3 text-sm font-semibold text-[#64748B] opacity-60"
-          disabled
-          title="Phone and WhatsApp OTP are not configured yet"
+          className={`inline-flex items-center justify-center gap-3 text-sm transition hover:bg-slate-50 ${
+            method === "phone"
+              ? "rounded-[5px] border border-[#C8B7FF] bg-[#F7F2FF] font-bold text-[#5E2FE5]"
+              : "font-semibold text-[#475569]"
+          }`}
+          onClick={() => selectMethod("phone")}
           type="button"
         >
           <PhoneIcon className="size-5" />
@@ -101,7 +122,7 @@ export function ForgotPasswordRequestCard({
         <p className="mt-2 max-w-[310px] text-[14px] leading-6 text-[#64748B]">
           {method === "email"
             ? "Enter your email address to receive a password reset link."
-            : "Phone and WhatsApp OTP are not configured for this project yet."}
+            : "Enter your mobile number to prepare your recovery request."}
         </p>
 
         <div className={method === "email" ? "mt-4" : "mt-4 grid gap-2 sm:grid-cols-[128px_1fr]"}>
@@ -121,13 +142,24 @@ export function ForgotPasswordRequestCard({
             </label>
             <div className="flex h-full items-center gap-3">
               <input
+                aria-describedby={localError ? "recovery-validation-message" : undefined}
+                aria-invalid={Boolean(localError)}
                 className="min-w-0 flex-1 bg-transparent text-[14px] text-[#0F172A] outline-none placeholder:text-[#64748B]"
                 id={method === "email" ? "recovery-email" : "recovery-phone"}
-                onChange={(event) =>
-                  method === "email"
-                    ? setEmail(event.target.value)
-                    : setPhone(event.target.value)
-                }
+                inputMode={method === "phone" ? "numeric" : undefined}
+                maxLength={method === "phone" ? 15 : undefined}
+                onChange={(event) => {
+                  setLocalError("");
+                  setLocalNotice("");
+
+                  if (method === "email") {
+                    setEmail(event.target.value);
+                    return;
+                  }
+
+                  setPhone(event.target.value.replace(/\D/g, "").slice(0, 15));
+                }}
+                pattern={method === "phone" ? "[0-9]*" : undefined}
                 placeholder={method === "email" ? "you@example.com" : "10 1234 5678"}
                 type={method === "email" ? "email" : "tel"}
                 value={method === "email" ? email : phone}
@@ -150,7 +182,7 @@ export function ForgotPasswordRequestCard({
         <div className="mt-4 text-center">
           <button
             className="text-[15px] font-semibold text-[#5E2FE5] transition hover:text-[#4C22D4] focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF]"
-            onClick={() => setLocalError("Phone and WhatsApp OTP are not available yet. Please use email recovery.")}
+            onClick={() => selectMethod("phone")}
             type="button"
           >
             Phone recovery unavailable
@@ -158,8 +190,21 @@ export function ForgotPasswordRequestCard({
         </div>
 
         {localError || errorMessage ? (
-          <p className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <p
+            className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+            id="recovery-validation-message"
+            role="alert"
+          >
             {localError || errorMessage}
+          </p>
+        ) : null}
+
+        {method === "phone" ? (
+          <p className="mt-5 rounded-xl border border-[#D8CBFF] bg-[#F7F2FF] px-4 py-3 text-sm font-medium text-[#4C22D4]">
+            <span className="block text-xs font-bold tracking-wide">BACKEND INTEGRATION PENDING</span>
+            <span className="mt-1 block">
+              {localNotice || "Phone and WhatsApp recovery is not connected to an authentication provider yet."}
+            </span>
           </p>
         ) : null}
 
@@ -169,10 +214,14 @@ export function ForgotPasswordRequestCard({
           </p>
         ) : null}
 
-      <Button className="mt-5 h-[50px] w-full text-base" disabled={isLoading} type="submit">
-        {isLoading ? "Sending..." : method === "email" ? "Send reset email" : "Use email recovery"}
-        <PaperPlaneIcon className="size-6" />
-      </Button>
+        <Button
+          className="mt-5 h-[50px] w-full flex-row gap-2 whitespace-nowrap text-base"
+          disabled={isLoading}
+          leadingIcon={<PaperPlaneIcon className="size-6 shrink-0" />}
+          type="submit"
+        >
+          {isLoading ? "Sending..." : method === "email" ? "Send reset email" : "Send recovery code"}
+        </Button>
       </form>
 
       <Link

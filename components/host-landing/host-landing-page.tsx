@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { DarLogo } from "@/components/brand/dar-logo";
 import { ButtonLink } from "@/components/ui";
 import { Icon } from "./icons";
@@ -93,7 +94,7 @@ function Section({ children, className = "" }: { children: React.ReactNode; clas
 }
 
 function Logo() {
-  return <DarLogo surface="dark" width={610} height={260} className="h-auto w-[112px] object-contain" priority />;
+  return <Link aria-label="Go to DAR homepage" className="block w-fit" href="/"><DarLogo surface="dark" width={610} height={260} className="h-auto w-[112px] object-contain" priority /></Link>;
 }
 
 function HeroSection() {
@@ -526,7 +527,7 @@ function CtaFooter() {
         </div>
       </div>
       <div className="grid gap-8 border-t border-white/10 px-5 py-4 sm:px-9 lg:grid-cols-[1.35fr_repeat(4,1fr)_1.7fr]">
-        <div className="text-[12px] leading-5"><DarLogo surface="dark" width={102} height={36} className="h-auto w-[102px] object-contain" /><p className="mt-3 max-w-[190px] text-white/70">Premium stays in Egypt. Studios, apartments and hotels in the best locations.</p><div className="mt-4 flex gap-5 text-[14px] font-bold leading-4 text-white/80">{["f", "ig", "x", "in", "yt"].map((social) => <a href="#" key={social}>{social}</a>)}</div></div>
+        <div className="text-[12px] leading-5"><Link aria-label="Go to DAR homepage" className="block w-fit" href="/"><DarLogo surface="dark" width={102} height={36} className="h-auto w-[102px] object-contain" /></Link><p className="mt-3 max-w-[190px] text-white/70">Premium stays in Egypt. Studios, apartments and hotels in the best locations.</p><div className="mt-4 flex gap-5 text-[14px] font-bold leading-4 text-white/80">{["f", "ig", "x", "in", "yt"].map((social) => <a href="#" key={social}>{social}</a>)}</div></div>
         {["Explore|Stays|Hotels|Experiences|Destinations", "Host|Become a host|Host resources|Pricing|Success stories", "Company|About us|Careers|Press|Partners", "Support|Help center|Cancellation options|Contact us|Trust & safety"].map((group) => {
           const [title, ...links] = group.split("|");
           return <div className="text-[12px] leading-4" key={title}><h3 className="font-bold">{title}</h3>{links.map((link) => <a className="mt-3 block text-white/70" href="#" key={link}>{link}</a>)}</div>;

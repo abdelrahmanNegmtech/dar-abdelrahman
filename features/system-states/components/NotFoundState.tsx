@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { SearchIcon } from "@/components/ui";
@@ -32,9 +33,9 @@ export function NotFoundState() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_45%,rgba(108,61,255,0.25),transparent_28%),linear-gradient(90deg,#06111F_0%,rgba(6,17,31,0.94)_42%,rgba(6,17,31,0.46)_100%)]" />
           <div className="relative grid min-h-[520px] items-center gap-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.48fr)]">
             <div>
-              <div className="dar-logo-frame h-[56px] w-[156px]">
+              <Link aria-label="Go to DAR homepage" className="dar-logo-frame h-[56px] w-[156px]" href="/">
                 <Image alt="DAR logo" className="dar-logo-image dar-logo-image-dark w-[152px]" height={864} priority src="/assets/images/dar-logo.png" width={1536} />
-              </div>
+              </Link>
               <h1 className="mt-10 text-[88px] font-black leading-none tracking-normal sm:text-[120px] lg:text-[150px]">
                 4<span className="text-[#6C3DFF]">0</span>4
               </h1>

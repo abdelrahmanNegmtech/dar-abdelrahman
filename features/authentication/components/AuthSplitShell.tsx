@@ -19,8 +19,8 @@ export function AuthSplitShell({
   topAction,
 }: AuthSplitShellProps) {
   return (
-    <main className="auth-screen min-h-dvh overflow-x-hidden bg-white p-0 lg:h-dvh lg:overflow-hidden lg:p-4" id="main-content">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1512px] overflow-hidden bg-[#090B17] lg:h-[calc(100dvh-32px)] lg:min-h-0 lg:rounded-[28px]">
+    <main className="auth-screen min-h-dvh w-full overflow-x-hidden bg-[#090B17] lg:h-dvh lg:overflow-hidden" id="main-content">
+      <div className="relative flex min-h-dvh w-full overflow-hidden bg-[#090B17] lg:h-dvh lg:min-h-0">
         <Image
           alt="Cairo Tower and Nile skyline at night"
           className={`absolute inset-0 hidden size-full object-cover ${imageObjectPosition} brightness-[1.16] contrast-[1.32] saturate-[1.35] lg:block`}
@@ -34,8 +34,8 @@ export function AuthSplitShell({
 
         {hero}
 
-        <section className="auth-content-panel relative z-10 flex min-h-dvh flex-1 items-center justify-center overflow-x-hidden bg-white px-5 py-8 sm:px-8 lg:h-full lg:min-h-0 lg:overflow-visible lg:bg-transparent lg:px-[32px] xl:px-[34px]">
-          <div className={`auth-card-column relative flex min-h-0 w-full items-center justify-center lg:h-full ${cardMaxWidthClassName}`}>
+        <section className="auth-content-panel relative z-10 flex min-h-dvh flex-1 items-center justify-center overflow-x-hidden bg-white px-5 py-8 sm:px-8 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:bg-transparent lg:px-[32px] lg:py-0 xl:px-[34px]">
+          <div className={`auth-card-column relative flex min-h-full w-full items-center justify-center py-8 ${cardMaxWidthClassName}`}>
             {topAction ? (
               <div className="auth-top-action pointer-events-auto absolute right-0 top-8 z-20 hidden max-w-full items-center justify-end text-right lg:flex">
                 {topAction}

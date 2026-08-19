@@ -21,6 +21,32 @@ const supportAgentId = "00000000-0000-4000-8000-000000000003";
 const photoA = "/assets/images/backgrounds/Nighttime_photo.jpeg";
 const photoB = "/assets/images/backgrounds/cairo-nights.png";
 
+const madintyBookingProperty: TravelerProperty = {
+  address: "Premium B12 address near South Park, services, and landscaped promenades",
+  amenities: ["Fast Wi-Fi", "Air conditioning", "Equipped kitchen", "Washer", "Garden view", "Elevator", "Free parking", "Workspace"],
+  area: "Madinty",
+  areaSize: 118,
+  bathrooms: 2,
+  bedrooms: 2,
+  city: "Cairo",
+  country: "Egypt",
+  currency: "EGP",
+  description: "A polished Madinty apartment with bright living spaces, elegant neutral finishes, a generous balcony, and a calm compound outlook.",
+  id: "property-madinty-modern",
+  imagePosition: "object-center",
+  imageUrl: "/properties/madinty-living.png",
+  isFeatured: true,
+  isSaved: false,
+  maxGuests: 4,
+  ownerId,
+  pricePerNight: 2800,
+  ratingAverage: 4.86,
+  reviewsCount: 128,
+  status: "published",
+  title: "Modern Apartment in Madinty",
+  type: "apartment",
+};
+
 export const devActivity = [
   { createdAt: "2026-05-16T11:25:00Z", description: "Phone number verified", id: "activity-1", label: "Phone verified" },
   { createdAt: "2026-05-14T09:30:00Z", description: "Visa ending in 4242 added as payment method", id: "activity-2", label: "Payment method added" },
@@ -272,6 +298,7 @@ export const devProperties: TravelerProperty[] = [
     title: "Marriott Mena House, Cairo",
     type: "hotel",
   },
+  madintyBookingProperty,
 ];
 
 const host = {
@@ -283,7 +310,40 @@ const host = {
   responseTime: "Usually within 20 min",
 };
 
+const ahmedHost = {
+  avatarUrl: "/owner-selfie-ahmed-reference.png",
+  id: ownerId,
+  isSuperhost: true,
+  name: "Ahmed Hassan",
+  rating: 4.9,
+  responseTime: "Usually within 20 min",
+};
+
 export const devBookings: TravelerBooking[] = [
+  {
+    cancellationPolicy: "Flexible cancellation before check-in.",
+    checkIn: "2026-07-08",
+    checkInTime: "2:00 PM",
+    checkOut: "2026-07-12",
+    checkOutTime: "11:00 AM",
+    cleaningFee: 0,
+    createdAt: "2026-05-19T10:24:00Z",
+    currency: "EGP",
+    guestsCount: 2,
+    id: "booking-madinty",
+    nightsCount: 4,
+    owner: ahmedHost,
+    paymentMethodLabel: "Vodafone Cash",
+    paymentStatus: "pending",
+    property: madintyBookingProperty,
+    reference: "DAR-MAD-58291",
+    roomsCount: 1,
+    serviceFee: 1344,
+    status: "pending",
+    subtotal: 11200,
+    totalAmount: 12244,
+    travelerId: guestId,
+  },
   {
     cancellationPolicy: "Free cancellation before 18 May 2025.",
     checkIn: "2025-05-20",
@@ -407,6 +467,22 @@ export const devBookings: TravelerBooking[] = [
 ];
 
 export const devConversations: TravelerConversation[] = [
+  {
+    bookingId: "booking-madinty",
+    id: "conversation-madinty-owner",
+    messages: [],
+    participant: {
+      avatarUrl: ahmedHost.avatarUrl,
+      id: ownerId,
+      isOnline: true,
+      name: ahmedHost.name,
+      role: "owner",
+      verified: true,
+    },
+    property: madintyBookingProperty,
+    unreadCount: 0,
+    updatedAt: "2026-05-19T10:28:00Z",
+  },
   {
     bookingId: "booking-zamalek",
     id: "conversation-zamalek-host",

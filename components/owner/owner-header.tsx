@@ -32,7 +32,9 @@ export function OwnerHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex min-h-[72px] items-center gap-5 border-b border-border bg-surface/95 px-7 backdrop-blur max-[900px]:px-4">
-      <DarLogo surface="light" width={610} height={260} className="hidden h-auto w-[92px] object-contain max-[900px]:block" />
+      <Link aria-label="Go to DAR homepage" className="hidden w-fit max-[900px]:block" href="/">
+        <DarLogo surface="light" width={610} height={260} className="h-auto w-[92px] object-contain" />
+      </Link>
       <form onSubmit={search} className="ml-auto w-full max-w-sm max-[700px]:hidden">
         <label className="relative block">
           <span className="sr-only">Search Owner Portal</span>
@@ -83,7 +85,7 @@ export function OwnerHeader() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" aria-label="Open owner profile menu" className="rounded-full outline-none transition hover:ring-2 hover:ring-brand/20 focus-visible:shadow-[var(--shadow-focus)]">
-            <Image src="/publish-avatar-ahmed-reference.png" alt="Ahmed Hassan" width={36} height={36} className="size-9 rounded-full object-cover" />
+            <Image src={OWNER_PROFILE_FALLBACK.avatarUrl} alt="Ahmed Hassan" width={36} height={36} className="size-9 rounded-full object-cover" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -1,41 +1,45 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
-  CalendarIcon,
   ChevronDownIcon,
   CloseIcon,
   HouseIcon,
   SearchIcon,
   UserIcon,
 } from "../icons";
+import { properties } from "../data";
+import { filterAndSortProperties } from "../searchPipeline";
 
 type FiltersModalProps = {
   onClose: () => void;
   open: boolean;
 };
 
-const propertyTypes = ["All types", "Apartments", "Studios", "Hotels", "Villas"];
-const amenities = [
-  "Wi-Fi",
-  "Air conditioning",
-  "Kitchen",
-  "TV",
-  "Washing machine",
-  "Pool",
-  "Free parking",
-  "Elevator",
-];
+const propertyTypes = ["All types", "Studios & Apartments", "Hotels"];
+const amenities = ["Wi-Fi", "Air conditioning", "Kitchen", "Parking", "Pool", "Workspace"];
 
 export function FiltersModal({ onClose, open }: FiltersModalProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const titleId = useId();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const [selectedType, setSelectedType] = useState("All types");
-  const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set(["Wi-Fi"]));
-  const [instantBook, setInstantBook] = useState(true);
-  const [freeCancel, setFreeCancel] = useState(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const [destination, setDestination] = useState(searchParams.get("destination") ?? "Madinaty");
+  const [checkIn, setCheckIn] = useState(searchParams.get("checkIn") ?? "");
+  const [checkOut, setCheckOut] = useState(searchParams.get("checkOut") ?? "");
+  const [guests, setGuests] = useState(searchParams.get("guests") ?? "2");
+  const [selectedType, setSelectedType] = useState(searchParams.get("type") ?? "Studios & Apartments");
+  const [selectedAmenities, setSelectedAmenities] = useState<Set<string>>(new Set((searchParams.get("amenities") ?? "").split(",").filter(Boolean)));
+  const [showAllAmenities, setShowAllAmenities] = useState(() => amenities.slice(4).some((amenity) => selectedAmenities.has(amenity)));
+  const [instantBook, setInstantBook] = useState(searchParams.get("instant") === "true");
+  const [freeCancel, setFreeCancel] = useState(searchParams.get("freeCancellation") === "true");
+  const count = useMemo(() => {
+    const params = buildParams(searchParams, { checkIn, checkOut, destination, freeCancel, guests, instantBook, selectedAmenities, selectedType });
+    return filterAndSortProperties(properties, params).length;
+  }, [checkIn, checkOut, destination, freeCancel, guests, instantBook, searchParams, selectedAmenities, selectedType]);
 
   function toggleAmenity(amenity: string) {
     setSelectedAmenities((current) => {
@@ -47,41 +51,55 @@ export function FiltersModal({ onClose, open }: FiltersModalProps) {
   }
 
   function applyFilters() {
-    const params = new URLSearchParams({
-      type: selectedType,
-      amenities: Array.from(selectedAmenities).join(","),
-    });
-    if (instantBook) params.set("instant", "true");
-    if (freeCancel) params.set("freeCancellation", "true");
+    const params = buildParams(searchParams, { checkIn, checkOut, destination, freeCancel, guests, instantBook, selectedAmenities, selectedType });
+    params.delete("page");
     router.push(`/search?${params.toString()}`);
     onClose();
   }
 
   useEffect(() => {
     if (!open) return;
+    returnFocusRef.current = document.activeElement as HTMLElement;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
+      if (event.key !== "Tab") return;
+
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
+      returnFocusRef.current?.focus();
     };
   }, [onClose, open]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0F172A]/45 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-[#0F172A]/45 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div
         aria-labelledby={titleId}
         aria-modal="true"
         className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-[0_-18px_60px_rgba(15,23,42,0.18)] lg:left-1/2 lg:top-1/2 lg:bottom-auto lg:max-h-[88dvh] lg:w-[700px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-2xl lg:p-9"
+        ref={dialogRef}
         role="dialog"
       >
         <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-[#CBD5E1] lg:hidden" />
@@ -102,12 +120,14 @@ export function FiltersModal({ onClose, open }: FiltersModalProps) {
           <ModalSection title="Location">
             <div className="flex h-[52px] items-center gap-3 rounded-lg border border-[#E5E7EB] px-4">
               <SearchIcon className="size-5 text-[#64748B]" />
-              <span className="text-[15px] text-[#64748B]">Where are you going?</span>
+              <select aria-label="Destination" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none" onChange={(event) => setDestination(event.target.value)} value={destination}>
+                {["Madinaty", "New Capital", "Noor City", "New Cairo", "Cairo East"].map((city) => <option key={city}>{city}</option>)}
+              </select>
             </div>
             <p className="mt-4 flex flex-wrap gap-4 text-[14px]">
               <span className="text-[#64748B]">Popular:</span>
-              {["Cairo", "Giza", "Alexandria", "Hurghada", "Sharm El Sheikh"].map((city) => (
-                <button className="font-semibold text-[#5A30E8]" key={city} type="button">
+              {["Madinaty", "New Capital", "Noor City"].map((city) => (
+                <button className="font-semibold text-[#5A30E8]" key={city} onClick={() => setDestination(city)} type="button">
                   {city}
                 </button>
               ))}
@@ -116,10 +136,10 @@ export function FiltersModal({ onClose, open }: FiltersModalProps) {
 
           <div className="grid gap-5 md:grid-cols-2">
             <ModalSection title="Dates">
-              <Picker icon={CalendarIcon} text="Check in - Check out" />
+              <div className="grid grid-cols-2 gap-2"><input aria-label="Check in" className="h-12 min-w-0 rounded-lg border border-[#E5E7EB] px-3 text-[13px]" onInput={(event) => { setCheckIn(event.currentTarget.value); if (checkOut && checkOut <= event.currentTarget.value) setCheckOut(""); }} type="date" value={checkIn} /><input aria-label="Check out" className="h-12 min-w-0 rounded-lg border border-[#E5E7EB] px-3 text-[13px]" min={checkIn ? nextDate(checkIn) : undefined} onInput={(event) => setCheckOut(event.currentTarget.value)} type="date" value={checkOut} /></div>
             </ModalSection>
             <ModalSection title="Guests">
-              <Picker icon={UserIcon} text="Add guests" />
+              <label className="flex h-12 items-center gap-3 rounded-lg border border-[#E5E7EB] px-4"><UserIcon className="size-5" /><select aria-label="Guests" className="min-w-0 flex-1 bg-transparent text-[15px]" onChange={(event) => setGuests(event.target.value)} value={guests}>{[1,2,3,4,5,6].map((value) => <option key={value} value={value}>{value} {value === 1 ? "guest" : "guests"}</option>)}</select></label>
             </ModalSection>
           </div>
 
@@ -157,13 +177,13 @@ export function FiltersModal({ onClose, open }: FiltersModalProps) {
 
           <ModalSection title="Amenities">
             <div className="flex flex-wrap gap-3">
-              {amenities.map((amenity) => (
+              {amenities.slice(0, showAllAmenities ? undefined : 4).map((amenity) => (
                 <button className={`h-9 rounded-lg border px-4 text-[13px] font-semibold ${selectedAmenities.has(amenity) ? "border-[#5A30E8] bg-[#F7F5FF] text-[#5A30E8]" : "border-[#E5E7EB]"}`} key={amenity} onClick={() => toggleAmenity(amenity)} type="button">
                   {amenity}
                 </button>
               ))}
-              <button className="inline-flex h-9 items-center gap-2 px-3 text-[13px] font-bold text-[#5A30E8]" type="button">
-                Show more
+              <button className="inline-flex h-9 items-center gap-2 px-3 text-[13px] font-bold text-[#5A30E8]" onClick={() => setShowAllAmenities((current) => !current)} type="button">
+                {showAllAmenities ? "Show less" : "Show more"}
                 <ChevronDownIcon className="size-4" />
               </button>
             </div>
@@ -199,7 +219,7 @@ export function FiltersModal({ onClose, open }: FiltersModalProps) {
             onClick={applyFilters}
             type="button"
           >
-            Show 1,234 places
+            Show {count} {count === 1 ? "place" : "places"}
           </button>
         </div>
       </div>
@@ -216,14 +236,24 @@ function ModalSection({ children, title }: { children: React.ReactNode; title: s
   );
 }
 
-function Picker({ icon: Icon, text }: { icon: typeof CalendarIcon; text: string }) {
-  return (
-    <button className="flex h-12 w-full items-center justify-between rounded-lg border border-[#E5E7EB] px-4 text-[15px] text-[#64748B]" type="button">
-      <span className="inline-flex items-center gap-3">
-        <Icon className="size-5" />
-        {text}
-      </span>
-      <ChevronDownIcon className="size-4 -rotate-90" />
-    </button>
-  );
+function nextDate(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function buildParams(
+  current: Pick<URLSearchParams, "toString">,
+  values: { checkIn: string; checkOut: string; destination: string; freeCancel: boolean; guests: string; instantBook: boolean; selectedAmenities: Set<string>; selectedType: string },
+) {
+  const params = new URLSearchParams(current.toString());
+  params.set("destination", values.destination);
+  params.set("guests", values.guests);
+  if (values.checkIn) params.set("checkIn", values.checkIn); else params.delete("checkIn");
+  if (values.checkOut) params.set("checkOut", values.checkOut); else params.delete("checkOut");
+  if (values.selectedType === "All types") params.set("type", "All types"); else params.set("type", values.selectedType);
+  if (values.selectedAmenities.size) params.set("amenities", Array.from(values.selectedAmenities).join(",")); else params.delete("amenities");
+  if (values.instantBook) params.set("instant", "true"); else params.delete("instant");
+  if (values.freeCancel) params.set("freeCancellation", "true"); else params.delete("freeCancellation");
+  return params;
 }

@@ -3,7 +3,7 @@ export const OWNER_PROFILE_FALLBACK = {
   slug: "ahmed-hassan",
   accountLabel: "Verified Owner",
   location: "Cairo, Egypt",
-  avatarUrl: "/publish-avatar-ahmed-reference.png",
+  avatarUrl: "/owner-selfie-ahmed-reference.png",
 } as const;
 
 export const OWNER_CALENDAR_FALLBACK_PROPERTY_ID = "1";

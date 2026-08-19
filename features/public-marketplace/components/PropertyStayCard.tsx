@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { MouseEvent } from "react";
 import { HeartIcon, StarIcon } from "@/components/ui";
 import { useFavorites } from "../favorites/useFavorites";
@@ -25,7 +25,6 @@ export function PropertyStayCard({
   slug = "luxury-studio-in-madinaty",
   title,
 }: PropertyStayCardProps) {
-  const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
   const saved = isFavorite(slug);
 
@@ -36,9 +35,9 @@ export function PropertyStayCard({
 
   return (
     <article
-      className="cursor-pointer overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(15,23,42,0.1)]"
-      onClick={() => router.push(`/stays/${slug}`)}
+      className="relative cursor-pointer overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(15,23,42,0.1)]"
     >
+      <Link aria-label={`View ${title}`} className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF] focus-visible:ring-inset" href={`/stays/${slug}`} />
       <div className="relative h-[178px] overflow-hidden">
         <Image
           alt={title}
@@ -54,7 +53,7 @@ export function PropertyStayCard({
         <button
           aria-label={`${saved ? "Unsave" : "Save"} ${title}`}
           aria-pressed={saved}
-          className={`absolute right-3 top-3 flex size-9 items-center justify-center rounded-full backdrop-blur-md transition ${saved ? "bg-white text-[#5A30E8]" : "bg-white/18 text-white hover:bg-white/28"}`}
+          className={`absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full backdrop-blur-md transition ${saved ? "bg-white text-[#5A30E8]" : "bg-white/18 text-white hover:bg-white/28"}`}
           onClick={toggleSaved}
           type="button"
         >

@@ -6,15 +6,19 @@ import { ArrowRightIcon } from "@/components/ui";
 import { properties } from "../search/data";
 import { PropertyStayCard } from "./PropertyStayCard";
 
-const stays = properties.slice(0, 4);
+const apartmentStays = properties.filter((property) => property.slug !== "premium-hotel-room");
+const hotelStays = properties.filter((property) => property.slug === "premium-hotel-room");
 
 export function PopularStaysSection() {
   const [activeTab, setActiveTab] = useState("Studios & Apartments");
   const [offset, setOffset] = useState(0);
   const visibleStays = useMemo(() => {
+    const stays = activeTab === "Hotels" ? hotelStays : apartmentStays;
     const rotated = [...stays.slice(offset), ...stays.slice(0, offset)];
-    return activeTab === "Hotels" ? rotated.slice().reverse() : rotated;
+    return rotated.slice(0, 4);
   }, [activeTab, offset]);
+
+  const activeStays = activeTab === "Hotels" ? hotelStays : apartmentStays;
 
   return (
     <section className="bg-white px-5 pb-12 sm:px-8 lg:px-12 xl:px-8 xl:pb-10 2xl:px-9">
@@ -23,10 +27,10 @@ export function PopularStaysSection() {
           <div>
             <h2 className="text-[26px] font-bold leading-tight text-[#0F172A]">Popular stays</h2>
             <div className="mt-5 flex items-center gap-10 text-[14px] font-semibold">
-              <button className={`${activeTab === "Studios & Apartments" ? "border-b-2 border-[#6C3DFF] text-[#5E2FE5]" : "text-[#64748B]"} pb-2 transition hover:text-[#0F172A]`} onClick={() => setActiveTab("Studios & Apartments")} type="button">
+              <button className={`${activeTab === "Studios & Apartments" ? "border-b-2 border-[#6C3DFF] text-[#5E2FE5]" : "text-[#64748B]"} pb-2 transition hover:text-[#0F172A]`} onClick={() => { setActiveTab("Studios & Apartments"); setOffset(0); }} type="button">
                 Studios & Apartments
               </button>
-              <button className={`${activeTab === "Hotels" ? "border-b-2 border-[#6C3DFF] text-[#5E2FE5]" : "text-[#64748B]"} pb-2 transition hover:text-[#0F172A]`} onClick={() => setActiveTab("Hotels")} type="button">
+              <button className={`${activeTab === "Hotels" ? "border-b-2 border-[#6C3DFF] text-[#5E2FE5]" : "text-[#64748B]"} pb-2 transition hover:text-[#0F172A]`} onClick={() => { setActiveTab("Hotels"); setOffset(0); }} type="button">
                 Hotels
               </button>
             </div>
@@ -35,7 +39,7 @@ export function PopularStaysSection() {
           <div className="flex items-center gap-4">
             <Link
               className="mt-1 text-[13px] font-semibold text-[#0F172A] underline decoration-[#0F172A]/40 underline-offset-4 transition hover:text-[#6C3DFF]"
-              href="/search"
+              href={activeTab === "Hotels" ? "/search?type=Hotels" : "/search?type=Studios+%26+Apartments"}
             >
               View all
             </Link>
@@ -43,7 +47,7 @@ export function PopularStaysSection() {
               <button
                 aria-label="Previous stays"
                 className="flex size-10 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#0F172A] transition hover:border-[#D8CCFF] hover:text-[#6C3DFF]"
-                onClick={() => setOffset((current) => (current + stays.length - 1) % stays.length)}
+                onClick={() => setOffset((current) => (current + activeStays.length - 1) % activeStays.length)}
                 type="button"
               >
                 <ArrowRightIcon className="size-4 rotate-180" />
@@ -51,7 +55,7 @@ export function PopularStaysSection() {
               <button
                 aria-label="Next stays"
                 className="flex size-10 items-center justify-center rounded-full border border-[#E5E7EB] bg-white text-[#0F172A] transition hover:border-[#D8CCFF] hover:text-[#6C3DFF]"
-                onClick={() => setOffset((current) => (current + 1) % stays.length)}
+                onClick={() => setOffset((current) => (current + 1) % activeStays.length)}
                 type="button"
               >
                 <ArrowRightIcon className="size-4" />

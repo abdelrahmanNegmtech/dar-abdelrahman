@@ -9,6 +9,7 @@ const recommendations = [
     location: "Madinaty",
     price: "EGP 1,300 / night",
     rating: "4.9",
+    slug: "luxury-studio-in-madinaty",
     title: "Luxury Studio",
   },
   {
@@ -17,6 +18,7 @@ const recommendations = [
     location: "New Capital",
     price: "EGP 1,700 / night",
     rating: "4.8",
+    slug: "modern-furnished-apartment",
     title: "Modern Apartment",
   },
   {
@@ -25,6 +27,7 @@ const recommendations = [
     location: "Noor City",
     price: "EGP 1,050 / night",
     rating: "4.7",
+    slug: "cozy-studio-with-balcony",
     title: "Cozy Studio",
   },
   {
@@ -33,6 +36,7 @@ const recommendations = [
     location: "Madinaty",
     price: "EGP 1,900 / night",
     rating: "4.9",
+    slug: "premium-apartment-in-madinaty",
     title: "Premium Apartment",
   },
 ];

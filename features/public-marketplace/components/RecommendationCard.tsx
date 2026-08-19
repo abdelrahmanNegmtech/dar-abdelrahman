@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 type RecommendationCardProps = {
   imagePosition: string;
@@ -6,6 +7,7 @@ type RecommendationCardProps = {
   location: string;
   price: string;
   rating: string;
+  slug?: string;
   title: string;
 };
 
@@ -15,9 +17,10 @@ export function RecommendationCard({
   location,
   price,
   rating,
+  slug,
   title,
 }: RecommendationCardProps) {
-  return (
+  const card = (
     <article className="group relative min-h-[250px] overflow-hidden rounded-xl bg-[#0F172A] shadow-[0_18px_42px_rgba(15,23,42,0.14)] xl:min-h-[186px] 2xl:min-h-[205px]">
       <Image
         alt={`${title} in ${location}`}
@@ -45,4 +48,10 @@ export function RecommendationCard({
       </div>
     </article>
   );
+
+  return slug ? (
+    <Link aria-label={`View ${title}`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF] focus-visible:ring-offset-2" href={`/stays/${slug}`}>
+      {card}
+    </Link>
+  ) : card;
 }

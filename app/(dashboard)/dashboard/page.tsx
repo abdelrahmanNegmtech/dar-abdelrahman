@@ -74,7 +74,9 @@ export default function DashboardPage() {
 function Sidebar() {
   return (
     <aside className="flex w-[232px] shrink-0 flex-col bg-[#020b18] px-4 py-6 text-white">
-      <DarLogo surface="dark" width={118} height={42} className="h-auto w-[118px] object-contain" priority />
+      <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+        <DarLogo surface="dark" width={118} height={42} className="h-auto w-[118px] object-contain" priority />
+      </Link>
       <div className="mt-6 rounded-lg border border-white/15 bg-white/[0.03] p-4">
         <div className="flex items-center gap-3">
           <Avatar size="lg" />

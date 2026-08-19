@@ -126,7 +126,7 @@ function Sidebar({
     <aside className="sticky top-0 hidden h-dvh w-[292px] shrink-0 border-r border-dar-border bg-white lg:flex lg:flex-col">
       {/* ── Logo ───────────────────────────────────────────── */}
       <div className="shrink-0 px-5 pb-4 pt-7">
-        <Link aria-label="DAR dashboard" className="mb-8 block" href="/traveler/dashboard">
+        <Link aria-label="Go to DAR homepage" className="mb-8 block" href="/">
           <DarLogo priority surface="light" />
         </Link>
       </div>
@@ -223,7 +223,9 @@ function MobileDrawer({
       <button aria-label="Close navigation overlay" className="absolute inset-0 bg-black/40" onClick={onClose} type="button" />
       <aside className="relative flex h-full w-[min(320px,88vw)] flex-col bg-dar-dark p-5 text-white shadow-2xl">
         <div className="flex items-center justify-between">
-          <DarLogo priority size="drawer" surface="dark" />
+          <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
+            <DarLogo priority size="drawer" surface="dark" />
+          </Link>
           <IconButton className="border-white/20 bg-white/10 text-white hover:bg-white/20" label="Close navigation" onClick={onClose}>
             <X className="size-5" />
           </IconButton>
@@ -289,7 +291,7 @@ function TravelerHeader({
         <Menu className="size-6" />
       </button>
 
-      <Link className="lg:hidden" href="/traveler/dashboard">
+      <Link aria-label="Go to DAR homepage" className="lg:hidden" href="/">
         <DarLogo priority size="mobile" surface="light" />
       </Link>
 

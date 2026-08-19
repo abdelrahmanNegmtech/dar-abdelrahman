@@ -54,11 +54,11 @@ export function MarketplaceNavbar({ variant = "overlay" }: MarketplaceNavbarProp
         >
           <Image
             alt="DAR logo"
-            className={`dar-logo-image w-[150px] object-contain lg:w-[164px] ${isOverlay ? "dar-logo-image-dark" : "dar-logo-image-light"}`}
-            height={864}
+            className={`h-full w-full object-contain object-center ${isOverlay ? "dar-logo-image-dark" : "dar-logo-image-light"}`}
+            height={260}
             priority
-            src="/assets/images/dar-logo.png"
-            width={1536}
+            src="/dar-logo-uploaded.png"
+            width={610}
           />
         </Link>
 

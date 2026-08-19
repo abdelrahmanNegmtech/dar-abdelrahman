@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MouseEvent } from "react";
 import { useFavorites } from "../../favorites/useFavorites";
@@ -9,10 +10,11 @@ import { SearchProperty } from "../data";
 
 type SearchPropertyCardProps = {
   compact?: boolean;
+  list?: boolean;
   property: SearchProperty;
 };
 
-export function SearchPropertyCard({ compact = false, property }: SearchPropertyCardProps) {
+export function SearchPropertyCard({ compact = false, list = false, property }: SearchPropertyCardProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
   const saved = isFavorite(property.slug);
@@ -24,12 +26,12 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
 
   return (
     <article
-      className={`h-full cursor-pointer overflow-hidden rounded-xl border bg-white shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition hover:border-[#C4B5FD] ${
-        compact ? "grid grid-cols-[minmax(150px,190px)_minmax(0,1fr)] border-[#A78BFA]" : "flex flex-col border-[#E5E7EB]"
+      className={`relative h-full overflow-hidden rounded-xl border bg-white shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition hover:border-[#C4B5FD] ${
+        compact || list ? "grid grid-cols-[minmax(150px,240px)_minmax(0,1fr)] border-[#A78BFA]" : "flex flex-col border-[#E5E7EB]"
       }`}
-      onClick={() => router.push(`/stays/${property.slug}`)}
     >
-      <div className={`relative overflow-hidden ${compact ? "h-full min-h-[168px]" : "aspect-[16/9] min-h-[168px]"}`}>
+      <Link aria-label={`View ${property.title}`} className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#5A30E8]" href={`/stays/${property.slug}`} />
+      <div className={`pointer-events-none relative z-[1] overflow-hidden ${compact || list ? "h-full min-h-[168px]" : "aspect-[16/9] min-h-[168px]"}`}>
         <Image
           alt={property.title}
           className={`absolute inset-0 size-full object-cover ${property.imagePosition}`}
@@ -37,14 +39,11 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
           sizes="(min-width: 1280px) 28vw, 100vw"
           src={property.imageSrc}
         />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/72 px-2 py-1 text-[11px] font-bold text-white">
-          <ShieldIcon className="size-3 fill-[#5A30E8]" />
-          Verified
-        </span>
+        {property.verified ? <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/72 px-2 py-1 text-[11px] font-bold text-white"><ShieldIcon className="size-3 fill-[#5A30E8]" />Verified</span> : null}
         <button
-          aria-label={`Save ${property.title}`}
+          aria-label={saved ? `Remove ${property.title} from favorites` : `Save ${property.title}`}
           aria-pressed={saved}
-          className={`absolute right-3 top-3 drop-shadow ${saved ? "text-[#5A30E8]" : "text-white"}`}
+          className={`pointer-events-auto absolute right-3 top-3 z-10 drop-shadow ${saved ? "text-[#5A30E8]" : "text-white"}`}
           onClick={toggleSaved}
           type="button"
         >
@@ -55,7 +54,7 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col p-4">
+      <div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="line-clamp-2 text-[16px] font-bold leading-5 xl:text-[17px]">
@@ -88,7 +87,7 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
             {property.price} <span className="font-normal text-[#475569]">/ night</span>
           </p>
           <button
-            className="h-9 shrink-0 rounded-lg border border-[#A78BFA] px-4 text-[13px] font-bold text-[#5A30E8]"
+            className="pointer-events-auto h-9 shrink-0 rounded-lg border border-[#A78BFA] px-4 text-[13px] font-bold text-[#5A30E8]"
             onClick={(event) => {
               event.stopPropagation();
               router.push(`/stays/${property.slug}`);

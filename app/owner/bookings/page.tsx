@@ -97,10 +97,10 @@ export default function OwnerBookingsPage() {
                         <td className="px-4 py-3">
                           {booking.status === "Pending" ? (
                             <div className="flex gap-2">
-                              <button onClick={() => updateStatus(booking.id, "Confirmed")} className="owner-button-text rounded-md bg-[var(--brand)] px-3 py-1.5 text-xs text-white transition-colors hover:bg-[var(--brand-strong)]">
+                              <button onClick={() => updateStatus(booking.id, "Confirmed")} className="owner-button-text rounded-md bg-[var(--brand)] px-3 py-1.5 text-xs text-white transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">
                                 Approve
                               </button>
-                              <button onClick={() => declineBooking(booking.id)} className="owner-button-text rounded-md border border-[#dce1e9] px-3 py-1.5 text-xs transition-colors hover:bg-[#fff0ef]">
+                              <button onClick={() => declineBooking(booking.id)} className="owner-button-text rounded-md border border-[#dce1e9] px-3 py-1.5 text-xs transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] disabled:hover:shadow-none">
                                 Decline
                               </button>
                             </div>

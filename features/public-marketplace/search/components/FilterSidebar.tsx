@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { filterGroups } from "../data";
 import { ChevronDownIcon } from "../icons";
@@ -11,11 +11,13 @@ type FilterSidebarProps = {
 
 export function FilterSidebar({ compact = false }: FilterSidebarProps) {
   const router = useRouter();
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set([...filterGroups.property, ...filterGroups.amenities, ...filterGroups.booking].filter((item) => item[2] === true).map((item) => String(item[0]))),
+  const searchParams = useSearchParams();
+  const [selected, setSelected] = useState<Set<string>>(() => readSelections(searchParams));
+  const [bedrooms, setBedrooms] = useState(searchParams.get("bedrooms") ?? "Any");
+  const [rating, setRating] = useState(searchParams.get("rating") ? `${searchParams.get("rating")}+` : "Any");
+  const [showAllAmenities, setShowAllAmenities] = useState(() =>
+    filterGroups.amenities.slice(4).some(([label]) => selected.has(String(label))),
   );
-  const [bedrooms, setBedrooms] = useState("Any");
-  const [rating, setRating] = useState("4.0+");
 
   function toggle(label: string) {
     setSelected((current) => {
@@ -30,15 +32,24 @@ export function FilterSidebar({ compact = false }: FilterSidebarProps) {
     setSelected(new Set());
     setBedrooms("Any");
     setRating("Any");
-    router.push("/search");
+    const params = new URLSearchParams(searchParams.toString());
+    ["propertyTypes", "amenities", "bedrooms", "rating", "instant", "freeCancellation", "verified", "page"].forEach((key) => params.delete(key));
+    router.push(`/search?${params.toString()}`, { scroll: false });
   }
 
   function applyFilters() {
-    const params = new URLSearchParams();
-    if (selected.size) params.set("filters", Array.from(selected).join(","));
-    params.set("bedrooms", bedrooms);
-    params.set("rating", rating);
-    router.push(`/search?${params.toString()}`);
+    const params = new URLSearchParams(searchParams.toString());
+    const propertyTypes = filterGroups.property.map(([label]) => String(label)).filter((label) => selected.has(label));
+    const amenities = filterGroups.amenities.map(([label]) => String(label)).filter((label) => selected.has(label));
+    setOrDelete(params, "propertyTypes", propertyTypes.join(","));
+    setOrDelete(params, "amenities", amenities.join(","));
+    setOrDelete(params, "bedrooms", bedrooms === "Any" ? "" : bedrooms);
+    setOrDelete(params, "rating", rating === "Any" ? "" : rating.replace("+", ""));
+    setBoolean(params, "instant", selected.has("Instant booking"));
+    setBoolean(params, "freeCancellation", selected.has("Free cancellation"));
+    setBoolean(params, "verified", selected.has("Verified only"));
+    params.delete("page");
+    router.push(`/search?${params.toString()}`, { scroll: false });
   }
 
   return (
@@ -101,8 +112,8 @@ export function FilterSidebar({ compact = false }: FilterSidebarProps) {
           </div>
         </FilterGroup>
 
-        <FilterGroup action="View all" title="Amenities">
-          {filterGroups.amenities.map(([label, count]) => (
+        <FilterGroup action={showAllAmenities ? "Show less" : "View all"} onAction={() => setShowAllAmenities((current) => !current)} title="Amenities">
+          {filterGroups.amenities.slice(0, showAllAmenities ? undefined : 4).map(([label, count]) => (
             <CheckboxRow
               count={String(count)}
               key={String(label)}
@@ -139,7 +150,7 @@ export function FilterSidebar({ compact = false }: FilterSidebarProps) {
                 {label}
               </span>
               <span className="text-[13px] text-[#64748B]">
-                {index === 0 ? "68" : index === 1 ? "112" : "128"}
+                {index === 0 ? "7" : index === 1 ? "7" : "7"}
               </span>
               <button className="absolute inset-0" aria-label={`Select rating ${label}`} onClick={() => setRating(label)} type="button" />
             </div>
@@ -161,11 +172,13 @@ export function FilterSidebar({ compact = false }: FilterSidebarProps) {
 function FilterGroup({
   action,
   children,
+  onAction,
   subtitle,
   title,
 }: {
   action?: string;
   children: React.ReactNode;
+  onAction?: () => void;
   subtitle?: string;
   title: string;
 }) {
@@ -176,16 +189,35 @@ function FilterGroup({
           {title} {subtitle ? <span className="font-normal">{subtitle}</span> : null}
         </h3>
         {action ? (
-          <button className="text-[13px] font-semibold text-[#5A30E8]" type="button">
+          <button className="text-[13px] font-semibold text-[#5A30E8]" onClick={onAction} type="button">
             {action}
           </button>
         ) : (
-          <ChevronDownIcon className="size-4" />
+          <ChevronDownIcon aria-hidden="true" className="size-4" />
         )}
       </div>
       <div className="mt-2">{children}</div>
     </section>
   );
+}
+
+function readSelections(searchParams: Pick<URLSearchParams, "get">) {
+  const values = [
+    ...(searchParams.get("propertyTypes") ?? "").split(","),
+    ...(searchParams.get("amenities") ?? "").split(","),
+  ].filter(Boolean);
+  if (searchParams.get("instant") === "true") values.push("Instant booking");
+  if (searchParams.get("freeCancellation") === "true") values.push("Free cancellation");
+  if (searchParams.get("verified") === "true") values.push("Verified only");
+  return new Set(values);
+}
+
+function setOrDelete(params: URLSearchParams, key: string, value: string) {
+  if (value) params.set(key, value); else params.delete(key);
+}
+
+function setBoolean(params: URLSearchParams, key: string, value: boolean) {
+  if (value) params.set(key, "true"); else params.delete(key);
 }
 
 function CheckboxRow({

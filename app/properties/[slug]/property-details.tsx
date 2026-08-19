@@ -370,6 +370,12 @@ export function PropertyDetails({ property }: PropertyDetailsProps) {
         : "en";
     const serviceFee = Math.round(subtotal * property.serviceFeeRate);
     const checkoutPayload = {
+      ...(property.slug === "modern-apartment-madinty"
+        ? {
+            bookingId: "booking-madinty",
+            conversationId: "conversation-madinty-owner",
+          }
+        : {}),
       propertyId: property.slug,
       title: property.title,
       location: property.location,

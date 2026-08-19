@@ -149,7 +149,7 @@ export function OwnerDashboard() {
               const property = properties.find((item) => item.name === booking.property) ?? properties[0];
               return (
                 <Link key={booking.id} href={booking.status === "Pending" ? "/owner/bookings/request-decision" : "/owner/bookings"} className="group grid grid-cols-[48px_minmax(0,1fr)_auto_auto] items-center gap-3 py-3 outline-none hover:bg-surface-muted focus-visible:bg-surface-muted max-[650px]:grid-cols-[48px_minmax(0,1fr)_auto]">
-                  <Image src={property.image} alt="" width={48} height={48} className="size-12 rounded-[var(--radius-sm)] object-cover" />
+                  <Image src={property.image} alt="" width={96} height={96} className="size-12 rounded-[var(--radius-sm)] object-cover" />
                   <div className="min-w-0">
                     <p className="owner-label truncate group-hover:text-brand">{property.name}</p>
                     <p className="owner-helper mt-1">{booking.guest} · {booking.dates}</p>

@@ -1,4 +1,4 @@
-import { SearchMode } from "../data";
+import { SearchMode, SearchProperty } from "../data";
 import { EmptySearchState, SearchErrorState, SearchResultsSkeleton } from "@/features/system-states";
 import { FilterSidebar } from "./FilterSidebar";
 import { MapPanel } from "./MapPanel";
@@ -6,17 +6,23 @@ import { ResultsToolbar } from "./ResultsToolbar";
 import { PropertyResultsGrid } from "./PropertyResultsGrid";
 
 type SearchResultsLayoutProps = {
+  destination: string;
   mode: SearchMode;
   onModeChange: (mode: SearchMode) => void;
   onOpenFilters: () => void;
+  properties: SearchProperty[];
 };
 
 export function SearchResultsLayout({
+  destination,
   mode,
   onModeChange,
   onOpenFilters,
+  properties,
 }: SearchResultsLayoutProps) {
-  const statePanel =
+  const statePanel = properties.length === 0 && mode === "results" ? (
+    <EmptySearchState />
+  ) :
     mode === "empty" ? (
       <EmptySearchState />
     ) : mode === "error" ? (
@@ -30,6 +36,8 @@ export function SearchResultsLayout({
       <section className="mx-auto grid max-w-[1880px] grid-cols-1 xl:grid-cols-[minmax(520px,700px)_minmax(560px,1fr)] 2xl:grid-cols-[minmax(620px,780px)_minmax(720px,1fr)]">
         <div className="min-h-[calc(100dvh-158px)] min-w-0 border-r border-[#E5E7EB] px-5 py-6 sm:px-7 xl:px-8">
           <ResultsToolbar
+            count={properties.length}
+            destination={destination}
             mapMode
             onModeChange={onModeChange}
             onOpenFilters={onOpenFilters}
@@ -38,10 +46,10 @@ export function SearchResultsLayout({
             <div className="hidden min-[1700px]:block">
               <FilterSidebar compact />
             </div>
-            <PropertyResultsGrid compact />
+            <PropertyResultsGrid compact properties={properties} />
           </div>
         </div>
-        <MapPanel focused />
+        <MapPanel focused properties={properties} />
       </section>
     );
   }
@@ -51,11 +59,11 @@ export function SearchResultsLayout({
       <FilterSidebar />
 
       <div className="min-w-0">
-        <ResultsToolbar onModeChange={onModeChange} onOpenFilters={onOpenFilters} />
+        <ResultsToolbar count={properties.length} destination={destination} onModeChange={onModeChange} onOpenFilters={onOpenFilters} />
         <div className="mt-5 grid min-w-0 gap-5 min-[1360px]:grid-cols-[minmax(620px,1fr)_minmax(380px,420px)] 2xl:grid-cols-[minmax(720px,1fr)_minmax(410px,460px)]">
-          <div className="min-w-0">{statePanel ?? <PropertyResultsGrid />}</div>
+          <div className="min-w-0">{statePanel ?? <PropertyResultsGrid properties={properties} />}</div>
           <aside className="hidden min-w-0 min-[1360px]:block">
-            <MapPanel />
+            <MapPanel properties={properties} />
           </aside>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { MapPinIcon } from "@/components/ui";
 
 type DestinationCardProps = {
@@ -15,7 +16,8 @@ export function DestinationCard({
   title,
 }: DestinationCardProps) {
   return (
-    <article className="group relative min-h-[180px] overflow-hidden rounded-xl bg-[#0F172A] shadow-[0_14px_36px_rgba(15,23,42,0.12)]">
+    <Link aria-label={`Explore stays in ${title}`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C3DFF] focus-visible:ring-offset-2" href={`/search?destination=${encodeURIComponent(title)}`}>
+      <article className="group relative min-h-[180px] overflow-hidden rounded-xl bg-[#0F172A] shadow-[0_14px_36px_rgba(15,23,42,0.12)]">
       <Image
         alt={`${title} destination`}
         className={`absolute inset-0 size-full object-cover ${imagePosition} transition duration-300 group-hover:scale-[1.03]`}
@@ -32,6 +34,7 @@ export function DestinationCard({
         </div>
         <p className="mt-1 pl-7 text-[13px] font-semibold text-white/86">{price}</p>
       </div>
-    </article>
+      </article>
+    </Link>
   );
 }

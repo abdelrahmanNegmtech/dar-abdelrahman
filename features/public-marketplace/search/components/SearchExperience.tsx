@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
-import { SearchMode } from "../data";
+import { properties, SearchMode } from "../data";
+import { filterAndSortProperties } from "../searchPipeline";
 import { FiltersModal } from "./SearchFiltersModal";
 import { SearchHeader } from "./SearchHeader";
 import { SearchResultsLayout } from "./SearchResultsLayout";
@@ -21,6 +22,9 @@ export function SearchExperience() {
   }, [searchParams]);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const filteredProperties = useMemo(() => filterAndSortProperties(properties, searchParams), [searchParams]);
+  const destination = searchParams.get("destination") ?? "Madinaty";
+  const queryKey = searchParams.toString();
 
   function handleModeChange(mode: SearchMode) {
     const params = new URLSearchParams(searchParams.toString());
@@ -39,13 +43,16 @@ export function SearchExperience() {
 
   return (
     <MarketplaceShell>
-      <SearchHeader onOpenFilters={() => setFiltersOpen(true)} />
+      <SearchHeader key={`header-${queryKey}`} onOpenFilters={() => setFiltersOpen(true)} />
       <SearchResultsLayout
+        destination={destination}
+        key={`results-${queryKey}`}
         mode={initialMode}
         onModeChange={handleModeChange}
         onOpenFilters={() => setFiltersOpen(true)}
+        properties={filteredProperties}
       />
-      <FiltersModal open={filtersOpen} onClose={() => setFiltersOpen(false)} />
+      <FiltersModal key={`filters-${queryKey}`} open={filtersOpen} onClose={() => setFiltersOpen(false)} />
     </MarketplaceShell>
   );
 }

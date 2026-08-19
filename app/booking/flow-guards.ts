@@ -22,6 +22,25 @@ export type StoredBooking = Record<string, unknown> & {
   selectedRoomId?: string;
   guestInfo?: Record<string, unknown>;
   paymentMethod?: string;
+  paymentDetails?: {
+    phoneCountryCode?: string;
+    vodafoneNumber?: string;
+    senderPhone?: string;
+    cardNumber?: string;
+    cardExpiry?: string;
+    cardCvv?: string;
+    cardName?: string;
+    instapayAlias?: string;
+    transferReference?: string;
+    receiptFileName?: string;
+    receiptFileType?: string;
+    receiptFileSize?: number;
+    houseRules?: boolean;
+    termsAccepted?: boolean;
+  };
+  promoCode?: string;
+  promoDiscount?: number;
+  promoStatus?: "idle" | "applied" | "invalid";
   paymentSubmitted?: boolean;
   bookingStatus?: string;
   bookingId?: string;
@@ -36,6 +55,9 @@ export type StoredBooking = Record<string, unknown> & {
 };
 
 export const bookingStorageKey = "dar-pending-booking";
+const receiptRequiredMethods = new Set(["vodafone", "instapay", "fawry", "bank"]);
+const receiptTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const maxReceiptSize = 10 * 1024 * 1024;
 
 export function readStoredBooking(): StoredBooking | null {
   if (typeof window === "undefined") {
@@ -99,6 +121,46 @@ export function hasHotelGuestInfo(booking: StoredBooking | null) {
 
 export function hasPaymentMethod(booking: StoredBooking | null) {
   return Boolean(booking?.paymentMethod);
+}
+
+export function hasValidPaymentDetails(booking: StoredBooking | null) {
+  if (!booking?.paymentMethod) return false;
+  const details = booking.paymentDetails ?? {};
+  const digits = (value?: string) => String(value ?? "").replace(/\D/g, "");
+  const hasRequiredReceipt =
+    !receiptRequiredMethods.has(booking.paymentMethod) ||
+    Boolean(
+      details.receiptFileName?.trim() &&
+        details.receiptFileType &&
+        receiptTypes.includes(details.receiptFileType) &&
+        Number(details.receiptFileSize) > 0 &&
+        Number(details.receiptFileSize) <= maxReceiptSize,
+    );
+
+  if (!hasRequiredReceipt || !details.houseRules || !details.termsAccepted) return false;
+
+  if (["card", "meeza", "paymob"].includes(booking.paymentMethod)) {
+    return (
+      digits(details.cardNumber).length >= 12 &&
+      /^\d{2}\s*\/\s*\d{2}$/.test(details.cardExpiry ?? "") &&
+      /^\d{3,4}$/.test(details.cardCvv ?? "") &&
+      Boolean(details.cardName?.trim())
+    );
+  }
+
+  if (booking.paymentMethod === "vodafone") {
+    return digits(details.vodafoneNumber).length >= 10 && digits(details.senderPhone).length >= 10;
+  }
+
+  if (booking.paymentMethod === "instapay") {
+    return Boolean(details.instapayAlias?.trim() && details.transferReference?.trim());
+  }
+
+  if (["fawry", "bank"].includes(booking.paymentMethod)) {
+    return Boolean(details.transferReference?.trim());
+  }
+
+  return booking.paymentMethod === "arrival";
 }
 
 export function hasCreatedBooking(booking: StoredBooking | null) {
@@ -171,6 +233,9 @@ export function requiredRedirectForStep(step: BookingStep, booking = readStoredB
     }
     if (step === "checkout" && !hasPaymentMethod(booking)) {
       return localizedGuardPath(booking, isHotelBooking(booking) ? "/booking/hotel/payment" : "/booking");
+    }
+    if (step === "checkout" && !isHotelBooking(booking) && !hasValidPaymentDetails(booking)) {
+      return localizedGuardPath(booking, "/booking/payment");
     }
     return null;
   }
