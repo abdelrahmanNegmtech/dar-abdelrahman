@@ -9,7 +9,7 @@ import { PropertyTypeSelector } from "./PropertyTypeSelector";
 import { marketplaceImages } from "../assets";
 
 export function HeroSection() {
-  const [propertyType, setPropertyType] = useState("Studios & Apartments");
+  const [propertyType, setPropertyType] = useState("Studios & Furnished Apartments");
 
   return (
     <section className="overflow-x-hidden bg-white p-3 sm:p-4 lg:p-5 xl:p-0">

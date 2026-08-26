@@ -127,7 +127,7 @@ function Sidebar({
       {/* ── Logo ───────────────────────────────────────────── */}
       <div className="shrink-0 px-5 pb-4 pt-7">
         <Link aria-label="Go to DAR homepage" className="mb-8 block" href="/">
-          <DarLogo priority surface="light" />
+          <DarLogo className="!w-[185px]" priority surface="light" />
         </Link>
       </div>
 

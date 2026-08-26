@@ -328,11 +328,8 @@ export default function HotelRoomSelectionPage() {
 
 function Header({ booking }: { booking: BookingPayload }) {
   return (
-    <header className="grid h-[76px] grid-cols-[44px_minmax(0,1fr)_44px] items-center px-5 lg:flex lg:justify-between lg:px-8">
-      <button type="button" aria-label="Open menu" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#F5F2FF] lg:hidden">
-        <Icon name="menu" className="h-6 w-6" />
-      </button>
-      <Link href={localizedPath(booking, "/")} aria-label="DAR home" className="justify-self-center lg:justify-self-auto">
+    <header className="flex h-[76px] items-center justify-between px-5 lg:px-8">
+      <Link href={localizedPath(booking, "/")} aria-label="DAR home">
         <Image src="/dar-logo-purple-header.png" alt="DAR" width={320} height={142} className="h-[42px] w-auto object-contain lg:h-[50px]" priority />
       </Link>
       <div className="flex items-center gap-7">
@@ -343,9 +340,6 @@ function Header({ booking }: { booking: BookingPayload }) {
         <a href="mailto:support@dar.example?subject=Room%20selection%20support" aria-label="Need help" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#F5F2FF] lg:hidden">
           <Icon name="headset" className="h-6 w-6" />
         </a>
-        <button type="button" aria-label="Open menu" className="hidden h-10 w-10 place-items-center rounded-full hover:bg-[#F5F2FF] lg:grid">
-          <Icon name="menu" className="h-6 w-6" />
-        </button>
       </div>
     </header>
   );

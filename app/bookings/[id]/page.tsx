@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import {
   Icon,
   bookingQuery,
   formatEgp,
   formatShortDate,
+  getBookingFallback,
   localizedPath,
   paymentLabel,
   readHotelBooking,
@@ -18,9 +19,21 @@ import { requiredRedirectForStep } from "@/app/booking/flow-guards";
 import { shortPath } from "@/app/routing";
 import { cn } from "@/lib/utils";
 
+const serverSnapshot = getBookingFallback();
+
 export default function BookingDetailsPage() {
   const router = useRouter();
-  const { booking } = useMemo(() => readHotelBooking(), []);
+  const clientBookingRef = useRef<ReturnType<typeof readHotelBooking> | null>(null);
+  const { booking } = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (!clientBookingRef.current) {
+        clientBookingRef.current = readHotelBooking();
+      }
+      return clientBookingRef.current;
+    },
+    () => serverSnapshot,
+  );
   const [moreOpen, setMoreOpen] = useState(false);
   const bookingId = booking.bookingId ?? "DAR-25052024-4837";
 
@@ -100,7 +113,7 @@ export default function BookingDetailsPage() {
                 <div className="my-5 border-t border-[#E1E7F0]" />
                 <Row label="Payment method" value={paymentLabel(booking.paymentMethod)} accent />
                 <Row label="Paid on" value="10 May 2024, 11:24 AM" />
-                <Link href={localizedPath(booking, "/booking/invoice")} className="mt-5 inline-flex items-center gap-2 text-[14px] font-bold text-[#5F36E9]">View payment details <Icon name="chevronRight" className="h-4 w-4" /></Link>
+                <Link href={`${localizedPath(booking, "/booking/pending")}?${bookingQuery(booking)}`} className="mt-5 inline-flex items-center gap-2 text-[14px] font-bold text-[#5F36E9]">View payment details <Icon name="chevronRight" className="h-4 w-4" /></Link>
               </Card>
               <Card title="Guest details">
                 <p className="text-[15px] font-black">{booking.guestInfo?.fullName || "Ahmed Hassan"}</p>
@@ -115,7 +128,7 @@ export default function BookingDetailsPage() {
                 <p className="text-[14px] font-bold text-[#34405A]">Free cancellation until</p>
                 <p className="mt-2 text-[17px] font-black text-[#168A43]">18 May 2024, 3:00 PM</p>
                 <p className="mt-5 text-[14px] leading-6 text-[#34405A]">After this date, the booking is non-refundable.</p>
-                <Link href={`${shortPath(`/hotels/${booking.hotelId ?? booking.propertyId}`, booking.locale)}#policies`} className="mt-7 inline-flex items-center gap-2 text-[14px] font-bold text-[#5F36E9]">View policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
+                <Link href="/legal/cancellation" className="mt-7 inline-flex items-center gap-2 text-[14px] font-bold text-[#5F36E9]">View policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
               </Card>
             </div>
 
@@ -150,16 +163,75 @@ function Header() {
     <header className="flex h-[86px] items-center justify-between border-b border-[#E6EBF3] px-6 lg:px-9">
       <Link href={shortPath("/", "en")} aria-label="DAR home"><Image src="/dar-logo-purple-header.png" alt="DAR" width={320} height={142} className="h-[50px] w-auto object-contain" priority /></Link>
       <nav className="hidden items-center gap-10 text-[14px] font-semibold lg:flex">
-        {["Home", "Bookings", "Stays", "Messages", "Profile"].map((item) => <Link key={item} href={item === "Bookings" ? shortPath("/bookings/DAR-25052024-4837", "en") : item === "Messages" ? shortPath("/messages", "en") : item === "Stays" ? shortPath("/rent", "en") : shortPath("/", "en")} className={cn(item === "Bookings" && "border-b-4 border-[#5F36E9] pb-8 text-[#080B32]")}>{item}</Link>)}
+        {["Home", "Bookings", "Stays", "Messages", "Profile"].map((item) => <Link key={item} href={item === "Bookings" ? shortPath("/bookings/DAR-25052024-4837", "en") : item === "Messages" ? shortPath("/messages", "en") : item === "Stays" ? shortPath("/rent", "en") : shortPath("/", "en")} className={cn(item === "Bookings" && "text-[#5F36E9]")}>{item}</Link>)}
       </nav>
       <div className="flex items-center gap-5"><Icon name="bell" /><div className="hidden items-center gap-3 lg:flex"><div className="relative h-10 w-10 overflow-hidden rounded-full bg-[#EDE8FF]"><Image src="/properties/madinty-bedroom.png" alt="Ahmed Hassan" fill className="object-cover" /></div><span className="font-bold">Ahmed Hassan</span></div></div>
     </header>
   );
 }
 
+const sidebarNav = [
+  { label: "Overview", href: "/bookings" },
+  { label: "Upcoming Bookings", href: "/bookings?tab=upcoming" },
+  { label: "Past Bookings", href: "/bookings?tab=past" },
+  { label: "Cancelled Bookings", href: "/bookings/cancelled" },
+  { label: "Saved Properties", href: "/saved" },
+] as const;
+
 function Sidebar() {
-  const items = ["Overview", "Upcoming Bookings", "Past Bookings", "Cancelled Bookings", "Saved Properties", "Payment Methods", "Settings"];
-  return <aside className="hidden border-r border-[#E6EBF3] p-8 lg:block"><nav className="space-y-6">{items.map((item) => <Link key={item} href="/" className="block text-[15px] font-medium text-[#34405A]">{item}</Link>)}</nav><div className="mt-10 border-t border-[#E6EBF3] pt-8"><Link href="/" className="block text-[15px] font-medium text-[#34405A]">Help Center</Link><Link href="/" className="mt-6 block text-[15px] font-medium text-[#F04438]">Log out</Link></div></aside>;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
+  const [isPending, startTransition] = useTransition();
+
+  function isActive(href: string) {
+    if (href === "/bookings?tab=upcoming") return pathname === "/bookings" && tab !== "past";
+    if (href === "/bookings?tab=past") return pathname === "/bookings" && tab === "past";
+    if (href === "/bookings/cancelled") return pathname.startsWith("/bookings/cancelled");
+    return pathname === href || pathname.startsWith(href + "/");
+  }
+
+  async function handleLogout() {
+    startTransition(async () => {
+      try {
+        const { logout } = await import("@/features/authentication/services/authService");
+        await logout();
+        window.location.href = "/";
+      } catch {
+        window.location.href = "/";
+      }
+    });
+  }
+
+  return (
+    <aside className="hidden border-r border-[#E6EBF3] p-8 lg:block">
+      <nav className="space-y-6">
+        {sidebarNav.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={cn(
+              "block text-[15px] font-medium",
+              isActive(item.href) ? "font-bold text-[#5F36E9]" : "text-[#34405A]",
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-10 border-t border-[#E6EBF3] pt-8">
+        <Link href="/help" className="block text-[15px] font-medium text-[#34405A]">Help Center</Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-6 block text-[15px] font-medium text-[#F04438]"
+          disabled={isPending}
+        >
+          {isPending ? "Logging out..." : "Log out"}
+        </button>
+      </div>
+    </aside>
+  );
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {

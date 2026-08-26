@@ -19,26 +19,34 @@ type InitialQuery = {
 
 type IconName =
   | "bed"
+  | "building"
+  | "bag"
   | "calendar"
   | "card"
   | "check"
   | "chevronDown"
+  | "child"
+  | "clock"
   | "close"
   | "grid"
   | "gym"
   | "heart"
   | "home"
+  | "idCard"
   | "info"
   | "location"
   | "lock"
   | "mail"
   | "map"
   | "parking"
+  | "pet"
+  | "plane"
   | "pool"
   | "restaurant"
   | "shield"
   | "spa"
   | "star"
+  | "tent"
   | "transfer"
   | "user"
   | "wifi";
@@ -67,6 +75,14 @@ function iconPath(name: IconName) {
     restaurant: "M7 3v8M4 3v8M10 3v8M4 8h6M7 11v10M17 3v18M14 3h6v8h-6",
     shield: "M12 3 19 6v5c0 4.8-2.9 8-7 10-4.1-2-7-5.2-7-10V6l7-3Z",
     spa: "M12 21c0-5 3-8 8-8-1.2 4.8-4.5 7.2-8 8Zm0 0c0-5-3-8-8-8 1.2 4.8 4.5 7.2 8 8Zm0-6c-3-2.2-3-6 0-10 3 4 3 7.8 0 10Z",
+    building: "M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4M5 9h14M5 13h14M5 17h14",
+    bag: "M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0",
+    idCard: "M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4ZM8 11h8M8 15h5",
+    pet: "M10 5.172C10 3.782 8.423 2.679 6.5 3c-2.823.47-4.113 6.006-4 7 .08.703 1.725 1.722 3.656 1 1.261-.472 1.96-1.45 2.344-2.5M14 5.172c0-1.39 1.577-2.493 3.5-2.172 2.823.47 4.113 6.006 4 7-.08.703-1.725 1.722-3.656 1-1.261-.472-1.96-1.45-2.344-2.5M18 17.5c0 1.38-1.567 2.5-3.5 2.5-2.823-.47-4.113-6.006-4-7 .08-.703 1.725-1.722 3.656-1 1.261.472 1.96 1.45 2.344 2.5ZM8 17.5c0 1.38 1.567 2.5 3.5 2.5 2.823-.47 4.113-6.006 4-7-.08-.703-1.725-1.722-3.656-1-1.261.472-1.96 1.45-2.344 2.5Z",
+    child: "M9 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9 14c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Zm7-2v6M14 17h6",
+    clock: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM12 6v6l4 2",
+    plane: "M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z",
+    tent: "M3.5 21L12 3l8.5 18M7.5 21V14M16.5 21V14M3.5 21h17",
     star: "m12 2.8 2.8 5.7 6.3.9-4.5 4.4 1.1 6.2L12 17.7 6.4 20.6l1.1-6.2L3 10l6.3-.9L12 2.8Z",
     transfer: "M4 7h11l3 4h2v6h-2M6 17h8M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm9 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
     user: "M20 21a8 8 0 0 0-16 0M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z",
@@ -121,6 +137,14 @@ function amenityIcon(label: string): IconName {
   if (value.includes("airport")) return "transfer";
   if (value.includes("room")) return "bed";
   return "check";
+}
+
+function attractionIcon(label: string): IconName {
+  const value = label.toLowerCase();
+  if (value.includes("airport") || value.includes("airplane")) return "plane";
+  if (value.includes("mall") || value.includes("shop")) return "bag";
+  if (value.includes("convention") || value.includes("center")) return "tent";
+  return "building";
 }
 
 export function HotelDetailsClient({ hotel, initialQuery }: { hotel: HotelListing; initialQuery: InitialQuery }) {
@@ -221,7 +245,7 @@ function Header() {
         </Link>
         <nav className="hidden items-center gap-10 text-[14px] font-semibold lg:flex">
           <Link href={shortPath("/rent", "en")}>Stays</Link>
-          <Link href={shortPath("/hotels", "en")} className="border-b-2 border-[#5F36E9] pb-5 text-[#5F36E9]">Hotels</Link>
+          <Link href={shortPath("/hotels", "en")} className="text-[#5F36E9]">Hotels</Link>
           <Link href={shortPath("/new-projects", "en")}>Become a host</Link>
           <Link href={shortPath("/", "en")}>About us</Link>
           <Link href={shortPath("/messages", "en")}>Help</Link>
@@ -381,18 +405,32 @@ function RoomsPreview({ hotel, checkIn, checkOut, guests, selectedRoomId, setSel
   );
 }
 
+function policyIcon(title: string): { name: IconName; color: string; bg: string; stroke: string } {
+  const lower = title.toLowerCase();
+  if (lower.includes("cancel")) return { name: "clock", color: "text-[#16A34A]", bg: "bg-[#E8F5E9]", stroke: "text-[#16A34A]" };
+  if (lower.includes("child") || lower.includes("children")) return { name: "child", color: "text-[#5F36E9]", bg: "bg-[#F3EEFF]", stroke: "text-[#5F36E9]" };
+  if (lower.includes("id") || lower.includes("passport")) return { name: "idCard", color: "text-[#5F36E9]", bg: "bg-[#F3EEFF]", stroke: "text-[#5F36E9]" };
+  if (lower.includes("pet")) return { name: "pet", color: "text-[#EF4444]", bg: "bg-[#FEE2E2]", stroke: "text-[#EF4444]" };
+  return { name: "info", color: "text-[#5F36E9]", bg: "bg-[#F3EEFF]", stroke: "text-[#5F36E9]" };
+}
+
 function Policies({ hotel }: { hotel: HotelListing }) {
   return (
     <section className="mt-7 rounded-[10px] border border-[#E1E7F0] bg-white p-4">
       <h2 className="text-[18px] font-black">Hotel policies</h2>
       <div className="mt-4 grid gap-4 md:grid-cols-4">
-        {hotel.policies.map((policy) => (
-          <div key={policy.title} className="rounded-[8px] border border-[#E1E7F0] p-4">
-            <Icon name={policy.tone === "red" ? "close" : policy.tone === "green" ? "check" : "info"} className={cn(policy.tone === "red" ? "text-[#EF4444]" : policy.tone === "green" ? "text-[#16A34A]" : "text-[#5F36E9]")} />
-            <h3 className="mt-2 text-[13px] font-black">{policy.title}</h3>
-            <p className="mt-1 text-[12px] leading-5 text-[#59637C]">{policy.description}</p>
-          </div>
-        ))}
+        {hotel.policies.map((policy) => {
+          const icon = policyIcon(policy.title);
+          return (
+            <div key={policy.title} className="rounded-[8px] border border-[#E1E7F0] p-4">
+              <div className={cn("grid h-10 w-10 place-items-center rounded-full", icon.bg)}>
+                <Icon name={icon.name} className={cn("h-5 w-5", icon.color)} />
+              </div>
+              <h3 className="mt-2 text-[13px] font-black">{policy.title}</h3>
+              <p className="mt-1 text-[12px] leading-5 text-[#59637C]">{policy.description}</p>
+            </div>
+          );
+        })}
       </div>
       <p className="mt-4 text-[12px] text-[#59637C]">We accept major payment methods in Egypt including cards, Meeza, InstaPay, and Fawry.</p>
     </section>
@@ -442,7 +480,7 @@ function LocationSection({ hotel }: { hotel: HotelListing }) {
         <div className="divide-y divide-[#E1E7F0]">
           {hotel.attractions.map((attraction) => (
             <div key={attraction.label} className="flex items-center justify-between px-4 py-3 text-[12px]">
-              <span className="inline-flex items-center gap-2"><Icon name="map" className="h-4 w-4" /> {attraction.label}</span>
+              <span className="inline-flex items-center gap-2"><Icon name={attractionIcon(attraction.label)} className="h-4 w-4" /> {attraction.label}</span>
               <span className="text-[#59637C]">{attraction.distance}</span>
             </div>
           ))}

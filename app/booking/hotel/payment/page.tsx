@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { BookingSummaryCard, HotelFlowHeader, Icon, Stepper, bookingQuery, localizedPath, paymentLabel, readHotelBooking, writeHotelBooking } from "../shared";
+import { BookingSummaryCard, HotelFlowHeader, Icon, Stepper, bookingQuery, getBookingFallback, localizedPath, paymentLabel, readHotelBooking, writeHotelBooking } from "../shared";
+
+const serverSnapshot = getBookingFallback();
 import { cn } from "@/lib/utils";
 import { requiredRedirectForStep } from "@/app/booking/flow-guards";
 
@@ -17,7 +19,17 @@ const methods = [
 
 export default function HotelPaymentMethodPage() {
   const router = useRouter();
-  const { booking } = useMemo(() => readHotelBooking(), []);
+  const clientBookingRef = useRef<ReturnType<typeof readHotelBooking> | null>(null);
+  const { booking } = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (!clientBookingRef.current) {
+        clientBookingRef.current = readHotelBooking();
+      }
+      return clientBookingRef.current;
+    },
+    () => serverSnapshot,
+  );
   const [paymentMethod, setPaymentMethod] = useState(booking.paymentMethod ?? "card");
   const [error, setError] = useState("");
 

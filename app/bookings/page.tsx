@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { Icon, formatEgp, formatShortDate, paymentLabel } from "@/app/booking/hotel/shared";
 import { readStoredBooking, type StoredBooking } from "@/app/booking/flow-guards";
 import { shortPath } from "@/app/routing";
@@ -28,8 +28,20 @@ function statusClass(status?: string) {
   return "bg-[#FFF7E6] text-[#B66A00]";
 }
 
+const serverSnapshot: StoredBooking | null = null;
+
 export default function MyBookingsPage() {
-  const [booking] = useState<StoredBooking | null>(() => readStoredBooking());
+  const clientRef = useRef<StoredBooking | null | undefined>(undefined);
+  const booking = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (clientRef.current === undefined) {
+        clientRef.current = readStoredBooking();
+      }
+      return clientRef.current;
+    },
+    () => serverSnapshot,
+  );
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] p-4 text-[#080B32]">

@@ -385,7 +385,7 @@ function RefundCard({ booking, refund, refundStatus, eligible }: { booking: Book
       <section className="mx-auto mt-9 max-w-[650px] rounded-[12px] border border-[#F2D7D7] bg-white p-7 shadow-[0_14px_35px_rgba(15,23,42,0.06)]">
         <h2 className="flex items-center gap-4 text-[18px] font-bold"><Icon name="wallet" className="text-[#EF4444]" /> Refund status</h2>
         <p className="mt-7 text-[15px] leading-7 text-[#34405A]">{statusCopy.not_eligible}</p>
-        <Link href={`${localizedPath(booking, `/properties/${booking.propertyId ?? featuredProperty.slug}`)}#policies`} className="mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-[#5F36E9]">View refund policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
+        <Link href={"/legal/cancellation"} className="mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-[#5F36E9]">View refund policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
       </section>
     );
   }
@@ -399,7 +399,7 @@ function RefundCard({ booking, refund, refundStatus, eligible }: { booking: Book
         </div>
       </div>
       <p className="mt-7 text-[15px] leading-7 text-[#34405A]">{statusCopy[refundStatus]}</p>
-      <Link href={`${localizedPath(booking, `/properties/${booking.propertyId ?? featuredProperty.slug}`)}#policies`} className="mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-[#5F36E9]">View refund policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
+      <Link href={"/legal/cancellation"} className="mt-5 inline-flex items-center gap-2 text-[15px] font-bold text-[#5F36E9]">View refund policy <Icon name="chevronRight" className="h-4 w-4" /></Link>
     </section>
   );
 }

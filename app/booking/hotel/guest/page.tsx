@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   BookingSummaryCard,
   HotelFlowHeader,
@@ -11,12 +11,15 @@ import {
   bookingQuery,
   countryDialCodes,
   defaultGuestInfo,
+  getBookingFallback,
   localizedPath,
   nationalities,
   readHotelBooking,
   writeHotelBooking,
   type HotelGuestInfo,
 } from "../shared";
+
+const serverSnapshot = getBookingFallback();
 import { cn } from "@/lib/utils";
 import { requiredRedirectForStep } from "@/app/booking/flow-guards";
 
@@ -24,7 +27,17 @@ const required: Array<keyof HotelGuestInfo> = ["fullName", "email", "countryCode
 
 export default function HotelGuestDetailsPage() {
   const router = useRouter();
-  const { booking } = useMemo(() => readHotelBooking(), []);
+  const clientBookingRef = useRef<ReturnType<typeof readHotelBooking> | null>(null);
+  const { booking } = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (!clientBookingRef.current) {
+        clientBookingRef.current = readHotelBooking();
+      }
+      return clientBookingRef.current;
+    },
+    () => serverSnapshot,
+  );
   const [guestInfo, setGuestInfo] = useState<HotelGuestInfo>({ ...defaultGuestInfo, ...booking.guestInfo });
   const [errors, setErrors] = useState<Partial<Record<keyof HotelGuestInfo, string>>>({});
 

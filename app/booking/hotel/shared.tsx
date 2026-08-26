@@ -206,7 +206,7 @@ export function paymentLabel(method?: string) {
   return labels[method ?? "card"] ?? "Credit / debit card";
 }
 
-export function readHotelBooking(): { booking: HotelBookingPayload; hotel: HotelListing; room: HotelRoom } {
+export function getBookingFallback(): { booking: HotelBookingPayload; hotel: HotelListing; room: HotelRoom } {
   const hotel = featuredHotel;
   const room = hotel.rooms[0];
   const fallbackSubtotal = room.pricePerNight * 2;
@@ -239,21 +239,26 @@ export function readHotelBooking(): { booking: HotelBookingPayload; hotel: Hotel
     cancellationPolicy: room.cancellationPolicy,
     guestInfo: defaultGuestInfo,
   };
+  return { booking: fallback, hotel, room };
+}
+
+export function readHotelBooking(): { booking: HotelBookingPayload; hotel: HotelListing; room: HotelRoom } {
+  const fallback = getBookingFallback();
 
   if (typeof window === "undefined") {
-    return { booking: fallback, hotel, room };
+    return fallback;
   }
 
   try {
     const parsed = JSON.parse(window.sessionStorage.getItem(storageKey) ?? "{}") as Partial<HotelBookingPayload>;
-    const activeHotel = getHotelBySlug(parsed.hotelId ?? parsed.propertyId) ?? hotel;
+    const activeHotel = getHotelBySlug(parsed.hotelId ?? parsed.propertyId) ?? fallback.hotel;
     const activeRoom = activeHotel.rooms.find((candidate) => candidate.id === parsed.selectedRoomId) ?? activeHotel.rooms[0];
-    const nights = parsed.nights ?? nightsBetween(parsed.checkIn ?? fallback.checkIn, parsed.checkOut ?? fallback.checkOut);
+    const nights = parsed.nights ?? nightsBetween(parsed.checkIn ?? fallback.booking.checkIn, parsed.checkOut ?? fallback.booking.checkOut);
     const price = parsed.pricePerNight ?? parsed.roomPricePerNight ?? activeRoom.pricePerNight;
     const subtotal = parsed.subtotal ?? price * nights;
     const serviceFee = parsed.serviceFee ?? Math.round(subtotal * activeHotel.taxRate);
     const booking: HotelBookingPayload = {
-      ...fallback,
+      ...fallback.booking,
       ...parsed,
       propertyId: activeHotel.slug,
       hotelId: activeHotel.slug,
@@ -277,7 +282,7 @@ export function readHotelBooking(): { booking: HotelBookingPayload; hotel: Hotel
     };
     return { booking, hotel: activeHotel, room: activeRoom };
   } catch {
-    return { booking: fallback, hotel, room };
+    return fallback;
   }
 }
 
@@ -296,9 +301,6 @@ export function HotelFlowHeader() {
           <Icon name="headset" className="h-5 w-5" />
           Need help?
         </a>
-        <button type="button" aria-label="Open menu" className="grid h-10 w-10 place-items-center rounded-full hover:bg-[#F5F2FF]">
-          <Icon name="menu" className="h-6 w-6" />
-        </button>
       </div>
     </header>
   );

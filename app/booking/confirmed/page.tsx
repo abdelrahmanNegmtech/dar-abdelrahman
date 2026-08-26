@@ -407,17 +407,28 @@ function NextSteps({ email }: { email: string }) {
 }
 
 function ImportantInfo() {
-  const rows = [
-    ["Check-in", "From 3:00 PM", "calendar", "/policies"],
-    ["Check-out", "Until 12:00 PM", "calendar", "/policies"],
-    ["Hotel policies", "View cancellation and other policies", "shield", "/policies"],
+  const staticRows = [
+    ["Check-in", "From 3:00 PM", "calendar"],
+    ["Check-out", "Until 12:00 PM", "calendar"],
+  ] as const;
+  const linkRows = [
+    ["Hotel policies", "View cancellation and other policies", "shield", "/legal"],
     ["Need to make changes?", "You can modify or cancel your booking before 18 May 2026", "help", "/bookings"],
   ] as const;
   return (
     <section className="min-h-[310px] rounded-[12px] border border-[#E1E7F0] bg-white p-6 shadow-[0_14px_35px_rgba(15,23,42,0.06)]">
       <h2 className="text-[19px] font-bold">Important information</h2>
       <div className="mt-5 space-y-4">
-        {rows.map(([title, body, icon, href]) => (
+        {staticRows.map(([title, body, icon]) => (
+          <div key={title} className="flex items-start gap-4 rounded-[8px]">
+            <Icon name={icon} className="mt-1 h-5 w-5 shrink-0 text-[#34405A]" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-bold">{title}</span>
+              <span className="mt-1 block text-[13px] leading-5 text-[#34405A]">{body}</span>
+            </span>
+          </div>
+        ))}
+        {linkRows.map(([title, body, icon, href]) => (
           <Link key={title} href={href} className="flex items-start gap-4 rounded-[8px] hover:bg-[#F8FAFC]">
             <Icon name={icon} className="mt-1 h-5 w-5 shrink-0 text-[#34405A]" />
             <span className="min-w-0 flex-1">

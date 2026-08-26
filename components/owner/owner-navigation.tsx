@@ -67,8 +67,8 @@ function NavigationLinks({ propertyId, variant = "dark", onNavigate }: OwnerNavi
             onClick={onNavigate}
             className={`group relative flex min-h-11 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-sm)] px-4 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-inset ${
               active
-                ? "bg-[var(--sidebar-dark-elevated)] text-[var(--sidebar-dark-foreground)] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[var(--brand)]"
-                : "text-[var(--sidebar-dark-muted)] hover:bg-[var(--sidebar-dark-elevated)] hover:text-[var(--sidebar-dark-foreground)]"
+                ? "text-[var(--brand)]"
+                : "text-[var(--sidebar-dark-muted)] hover:text-[var(--sidebar-dark-foreground)]"
             }`}
           >
             <NavigationIcon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={1.8} />
