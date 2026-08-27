@@ -4,6 +4,7 @@ import {
   getPublicProperties,
   parsePublicPropertyFilters,
 } from "@/features/properties/data/public-property-queries";
+import { FavoritesBoundary } from "@/features/public-marketplace/favorites/FavoritesBoundary";
 import { SearchExperience } from "@/features/public-marketplace/search/components/SearchExperience";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
@@ -20,10 +21,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <Suspense fallback={null}>
-      <SearchExperience
-        initialResults={searchData ?? buildSearchFallbackResult()}
-        loadFailed={searchData === null}
-      />
+      <FavoritesBoundary>
+        <SearchExperience
+          initialResults={searchData ?? buildSearchFallbackResult()}
+          loadFailed={searchData === null}
+        />
+      </FavoritesBoundary>
     </Suspense>
   );
 }

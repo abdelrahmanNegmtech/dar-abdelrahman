@@ -2,46 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useMemo } from "react";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
-import { properties } from "../../search/data";
+import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
 import { HeartIcon, ShieldIcon, StarIcon } from "../../search/icons";
 import { useFavorites } from "../useFavorites";
 
-type AuthState = "loading" | "logged-out" | "logged-in";
+type AuthState = "logged-out" | "logged-in";
 
-export function FavoritesPage() {
-  const { favorites, toggleFavorite } = useFavorites();
-  const [authState, setAuthState] = useState<AuthState>("loading");
-
-  useEffect(() => {
-    let supabase: ReturnType<typeof createClient>;
-
-    try {
-      supabase = createClient();
-    } catch {
-      window.queueMicrotask(() => setAuthState("logged-out"));
-      return;
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthState(data.user ? "logged-in" : "logged-out");
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthState(session?.user ? "logged-in" : "logged-out");
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const savedProperties = useMemo(
-    () => properties.filter((property) => favorites.includes(property.slug)),
-    [favorites],
-  );
+export function FavoritesPage({
+  authState,
+  properties,
+}: {
+  authState: AuthState;
+  properties: PublicPropertyCard[];
+}) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const savedProperties = useMemo(() => properties.filter((property) => isFavorite(property.id)), [isFavorite, properties]);
 
   return (
     <MarketplaceShell>
@@ -56,8 +33,7 @@ export function FavoritesPage() {
                 Your favorite DAR places
               </h1>
               <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#475569]">
-                Keep a local shortlist while browsing. Permanent saved lists will connect to the
-                marketplace backend in the next product phase.
+                Save properties while browsing and keep them synced across your DAR account.
               </p>
             </div>
             <Link
@@ -68,13 +44,7 @@ export function FavoritesPage() {
             </Link>
           </div>
 
-          {authState === "loading" ? (
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {[1, 2].map((item) => (
-                <div className="h-48 animate-pulse rounded-xl bg-[#F1F5F9]" key={item} />
-              ))}
-            </div>
-          ) : authState === "logged-out" ? (
+          {authState === "logged-out" ? (
             <EmptyFavorites
               actionHref="/login?redirectTo=/favorites"
               actionLabel="Sign in to save places"
@@ -133,7 +103,7 @@ export function FavoritesPage() {
                       </Link>
                       <button
                         className="inline-flex h-10 items-center justify-center rounded-lg border border-[#E5E7EB] px-4 text-[13px] font-bold text-[#0F172A]"
-                        onClick={() => toggleFavorite(property.slug)}
+                        onClick={() => void toggleFavorite(property.id)}
                         type="button"
                       >
                         Remove
@@ -166,7 +136,7 @@ function EmptyFavorites({
       </div>
       <h2 className="mt-5 text-[22px] font-bold text-[#0F172A]">{title}</h2>
       <p className="mt-2 max-w-md text-[14px] leading-6 text-[#475569]">
-        Save properties from search, map mode, and property pages to build a shortlist on this device.
+        Save properties from search, map mode, and property pages to keep them ready for later.
       </p>
       <Link
         className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-[#5A30E8] px-6 text-[14px] font-bold text-white"

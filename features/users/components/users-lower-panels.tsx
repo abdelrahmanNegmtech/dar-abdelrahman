@@ -26,7 +26,12 @@ const permissionIcons = {
   payments: Landmark,
   disputes: Scale,
   admins: Users,
-} satisfies Record<PermissionItem["id"], typeof Building2>;
+  users: Users,
+  verifications: BadgeCheck,
+  support: ShieldAlert,
+  roles: UserCog,
+  password: ShieldAlert,
+} as const;
 
 const timelineStateStyles = {
   completed: {
@@ -90,7 +95,7 @@ export function UsersLowerPanels({
           <div className="space-y-1">
             {permissionItems.map((permission) => {
               const Icon =
-                permissionIcons[permission.id as keyof typeof permissionIcons];
+                permissionIcons[permission.id as keyof typeof permissionIcons] ?? ShieldAlert;
 
               return (
                 <div

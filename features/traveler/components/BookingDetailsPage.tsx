@@ -19,7 +19,7 @@ import {
   Wifi,
 } from "lucide-react";
 import { useToast } from "@/features/system-states/hooks/useToast";
-import { cancelBooking, toggleSavedProperty } from "../actions";
+import { cancelBooking, setSavedProperty } from "../actions";
 import type { TravelerBooking } from "../types";
 import {
   Card,
@@ -73,9 +73,13 @@ export function BookingDetailsPage({ booking }: { booking: TravelerBooking | nul
   }
 
   function handleSaved() {
-    setIsSaved((current) => !current);
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
     startTransition(async () => {
-      const result = await toggleSavedProperty(propertyId);
+      const result = await setSavedProperty(propertyId, nextSaved);
+      if (!result.ok) {
+        setIsSaved(!nextSaved);
+      }
       showToast({
         description: result.message,
         title: result.ok ? "Favorite updated" : "Could not update",

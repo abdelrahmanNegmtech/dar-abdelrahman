@@ -15,11 +15,11 @@ type SearchPropertyCardProps = {
 export function SearchPropertyCard({ compact = false, property }: SearchPropertyCardProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(property.slug);
+  const saved = isFavorite(property.id);
 
   function toggleSaved(event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
-    toggleFavorite(property.slug);
+    void toggleFavorite(property.id);
   }
 
   return (
@@ -42,7 +42,7 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
           Verified
         </span>
         <button
-          aria-label={`Save ${property.title}`}
+          aria-label={`${saved ? "Unsave" : "Save"} ${property.title}`}
           aria-pressed={saved}
           className={`absolute right-3 top-3 drop-shadow ${saved ? "text-[#5A30E8]" : "text-white"}`}
           onClick={toggleSaved}

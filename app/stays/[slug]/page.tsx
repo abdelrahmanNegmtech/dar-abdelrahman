@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublicPropertyBySlug } from "@/features/properties/data/public-property-queries";
+import { FavoritesBoundary } from "@/features/public-marketplace/favorites/FavoritesBoundary";
 import { PropertyDetailsPage } from "@/features/public-marketplace/property-details/components/PropertyDetailsPage";
 
 type StayDetailsPageProps = {
@@ -31,5 +32,9 @@ export default async function StayDetailsPage({ params }: StayDetailsPageProps) 
     notFound();
   }
 
-  return <PropertyDetailsPage property={property} />;
+  return (
+    <FavoritesBoundary>
+      <PropertyDetailsPage property={property} />
+    </FavoritesBoundary>
+  );
 }

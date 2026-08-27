@@ -119,6 +119,17 @@ export async function updateSession(request: NextRequest) {
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }
+
+    if (
+      (request.nextUrl.pathname === "/traveler" ||
+        request.nextUrl.pathname.startsWith("/traveler/")) &&
+      accountType !== "guest"
+    ) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/search";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return supabaseResponse;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { Grid2X2, Heart, List, MapPin, SlidersHorizontal } from "lucide-react";
 import { useToast } from "@/features/system-states/hooks/useToast";
-import { toggleSavedProperty } from "../actions";
+import { setSavedProperty } from "../actions";
 import type { PropertyType, TravelerProperty } from "../types";
 import { EmptyState, IconButton, PageHeader, PrimaryButton, PropertyCard, SearchInput, SecondaryButton, SelectField, cx } from "./shared";
 import { getSavedCategories } from "../utils";
@@ -45,7 +45,14 @@ export function SavedPropertiesPage({ properties }: { properties: TravelerProper
   function handleRemove(propertyId: string) {
     setRemovedIds((current) => new Set(current).add(propertyId));
     startTransition(async () => {
-      const result = await toggleSavedProperty(propertyId);
+      const result = await setSavedProperty(propertyId, false);
+      if (!result.ok) {
+        setRemovedIds((current) => {
+          const next = new Set(current);
+          next.delete(propertyId);
+          return next;
+        });
+      }
       showToast({
         description: result.message,
         title: result.ok ? "Removed from saved" : "Could not update saved",

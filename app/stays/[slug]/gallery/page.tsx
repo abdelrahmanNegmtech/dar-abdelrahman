@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPublicPropertyBySlug } from "@/features/properties/data/public-property-queries";
+import { FavoritesBoundary } from "@/features/public-marketplace/favorites/FavoritesBoundary";
 import { PropertyGalleryPage } from "@/features/public-marketplace/property-gallery/components/PropertyGalleryPage";
 
 type StayGalleryPageProps = {
@@ -14,5 +15,9 @@ export default async function StayGalleryPage({ params }: StayGalleryPageProps) 
     notFound();
   }
 
-  return <PropertyGalleryPage property={property} />;
+  return (
+    <FavoritesBoundary>
+      <PropertyGalleryPage property={property} />
+    </FavoritesBoundary>
+  );
 }

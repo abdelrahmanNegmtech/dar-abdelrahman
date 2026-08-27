@@ -33,9 +33,6 @@ type PublicPropertyRow = Pick<
   | "city"
   | "area"
   | "country_name"
-  | "latitude"
-  | "longitude"
-  | "location_precision"
   | "max_guests"
   | "bedrooms_count"
   | "beds_count"
@@ -222,14 +219,6 @@ function buildRatingString(rating: number, reviewsCount: number) {
 }
 
 function sanitizeCoordinates(row: PublicPropertyRow) {
-  if (
-    row.location_precision !== "exact_private" &&
-    row.latitude !== null &&
-    row.longitude !== null
-  ) {
-    return { lat: row.latitude, lng: row.longitude };
-  }
-
   return CITY_COORDINATES[row.city] ?? DEFAULT_COORDINATES;
 }
 
@@ -397,7 +386,7 @@ export async function getPublicProperties(filters: PublicPropertyFilters = {}): 
   let query = supabase
     .from("properties")
     .select(
-      "id, public_slug, property_type, title, description, city, area, country_name, latitude, longitude, location_precision, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
       { count: "exact" },
     );
 
@@ -473,6 +462,33 @@ export async function getFeaturedPublicProperties(limit = 4) {
   return result.items.slice(0, limit);
 }
 
+export async function getPublicPropertyCardsByIds(propertyIds: string[]) {
+  noStore();
+
+  if (!propertyIds.length) {
+    return [] as PublicPropertyCard[];
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select(
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+    )
+    .in("id", propertyIds);
+
+  if (error) {
+    throw new Error("Unable to load selected public properties.");
+  }
+
+  const rows = (data ?? []) as PublicPropertyRow[];
+  const reviewsByPropertyId = await getPublicReviewsByPropertyIds(rows.map((row) => row.id));
+  const cards = rows.map((row) => buildFallbackSearchCard(row, reviewsByPropertyId));
+  const order = new Map(propertyIds.map((propertyId, index) => [propertyId, index]));
+
+  return cards.sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
+}
+
 export async function getPublicPropertyBySlug(slug: string): Promise<PublicPropertyDetail | null> {
   noStore();
 
@@ -480,7 +496,7 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
   const { data, error } = await supabase
     .from("properties")
     .select(
-      "id, public_slug, property_type, title, description, city, area, country_name, latitude, longitude, location_precision, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
     )
     .eq("public_slug", slug)
     .maybeSingle();
@@ -543,10 +559,7 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
     instantBookEnabled: row.instant_book_enabled,
     isUsingFallbackImages: true,
     locationLabel: buildLocationLabel(row),
-    locationPrecisionLabel:
-      row.location_precision === "approximate"
-        ? "Approximate area pin shown"
-        : "Verified property",
+    locationPrecisionLabel: "Approximate area pin shown",
     maxGuests: row.max_guests,
     maximumNights: row.maximum_nights,
     minimumNights: row.minimum_nights,

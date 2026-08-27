@@ -65,6 +65,7 @@ export function PopularStaysSection({ stays }: PopularStaysSectionProps) {
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {visibleStays.map((stay) => (
             <PropertyStayCard
+              id={stay.id}
               imagePosition={stay.imagePosition}
               imageSrc={stay.imageSrc}
               key={stay.slug}

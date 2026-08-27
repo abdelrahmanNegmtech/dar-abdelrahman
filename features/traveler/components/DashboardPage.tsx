@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { CalendarDays, CheckCircle2, CreditCard, Heart, HelpCircle, Star } from "lucide-react";
 import { useToast } from "@/features/system-states/hooks/useToast";
-import { toggleSavedProperty } from "../actions";
+import { setSavedProperty } from "../actions";
 import type { TravelerBooking, TravelerProperty, TravelerProfile } from "../types";
 import { BookingCard, Card, EmptyState, PageHeader, PrimaryButton, PropertyCard, SecondaryButton, StatCard, cx } from "./shared";
 import { formatCurrency } from "../utils";
@@ -45,8 +45,9 @@ export function DashboardPage({
   );
 
   function handleSave(propertyId: string) {
+    const wasSaved = savedIds.has(propertyId);
+
     setSavedIds((current) => {
-      const wasSaved = current.has(propertyId);
       const next = new Set(current);
       if (wasSaved) next.delete(propertyId);
       else next.add(propertyId);
@@ -55,7 +56,16 @@ export function DashboardPage({
     });
 
     startTransition(async () => {
-      const result = await toggleSavedProperty(propertyId);
+      const result = await setSavedProperty(propertyId, !wasSaved);
+      if (!result.ok) {
+        setSavedIds((current) => {
+          const next = new Set(current);
+          if (wasSaved) next.add(propertyId);
+          else next.delete(propertyId);
+          return next;
+        });
+        setLocalSavedCount((current) => wasSaved ? current + 1 : current - 1);
+      }
       showToast({
         description: result.message,
         title: result.ok ? "Saved updated" : "Could not update",

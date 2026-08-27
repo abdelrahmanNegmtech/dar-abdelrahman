@@ -22,7 +22,7 @@ const faqs = [
     question: "Can I pay online today?",
   },
   {
-    answer: "Favorites are saved locally on this device for the current frontend prototype. Backend sync will be added later.",
+    answer: "Favorites are saved to your DAR account when you are signed in, so they stay available after refresh and across supported saved pages.",
     category: "Favorites",
     question: "Where are my saved stays stored?",
   },

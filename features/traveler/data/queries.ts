@@ -13,6 +13,10 @@ import {
   getMySupportTickets,
   getSupportTicketById as getSupportTicketByIdFromSupabase,
 } from "@/features/support/data/support-ticket-queries";
+import {
+  getRecommendedTravelerProperties,
+  getTravelerSavedProperties,
+} from "./saved-property-queries";
 import { DEV_AUTH_BYPASS_USER, isDevAuthBypassEnabled } from "@/lib/auth/devAuthBypass";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import type { ProfileRow } from "@/lib/supabase/database";
@@ -212,6 +216,13 @@ export async function getDashboardData() {
   const upcomingBookings = data.bookings.filter((booking) => booking.status === "confirmed" || booking.status === "pending");
   const completedBookings = data.bookings.filter((booking) => booking.status === "completed");
   const upcomingStay = upcomingBookings[0] ?? null;
+  const useSupabaseSavedProperties = !isDevAuthBypassEnabled() && getSupabaseConfig();
+  const savedProperties = useSupabaseSavedProperties
+    ? await getTravelerSavedProperties()
+    : data.properties.filter((property) => property.isSaved);
+  const recommendedProperties = useSupabaseSavedProperties
+    ? await getRecommendedTravelerProperties(4)
+    : data.properties.filter((property) => property.status === "published").slice(0, 4);
   const notificationsUnread =
     !isDevAuthBypassEnabled() && getSupabaseConfig()
       ? await getUnreadNotificationCount()
@@ -222,9 +233,9 @@ export async function getDashboardData() {
     notificationsUnread,
     paymentBalance: data.wallet.balance,
     profile: data.profile,
-    recommendedProperties: data.properties.filter((property) => property.status === "published").slice(0, 4),
+    recommendedProperties,
     reviewsCount: data.reviews.filter((review) => review.status === "submitted").length,
-    savedCount: data.properties.filter((property) => property.isSaved).length,
+    savedCount: savedProperties.length,
     trips: upcomingBookings.concat(completedBookings).slice(0, 4),
     upcomingStay,
     upcomingStaysCount: upcomingBookings.length,
@@ -263,6 +274,12 @@ export async function getBookingDetailsData(bookingId: string) {
 }
 
 export async function getSavedPropertiesData() {
+  if (!isDevAuthBypassEnabled() && getSupabaseConfig()) {
+    return {
+      properties: await getTravelerSavedProperties(),
+    };
+  }
+
   const data = await getTravelerData();
   return {
     properties: data.properties.filter((property) => property.isSaved),

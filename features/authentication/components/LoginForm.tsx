@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import {
   Button,
   Checkbox,
@@ -23,36 +23,33 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const initialAuthError = useMemo(() => {
-    if (typeof window === "undefined") {
-      return "";
-    }
-
-    return new URLSearchParams(window.location.search).get("authError")
-      ? "The authentication link is invalid or expired. Please try again."
-      : "";
-  }, []);
-  const [errorMessage, setErrorMessage] = useState(initialAuthError);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
 
-  const redirectTo = useMemo(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+  useEffect(() => {
+    const syncQueryState = () => {
+      const searchParams = new URLSearchParams(window.location.search);
 
-    const value = new URLSearchParams(window.location.search).get("redirectTo");
+      setErrorMessage(
+        searchParams.get("authError")
+          ? "The authentication link is invalid or expired. Please try again."
+          : null,
+      );
 
-    if (!value) {
-      return null;
-    }
+      const value = searchParams.get("redirectTo");
+      setRedirectTo(value ? getSafeRedirect(value, "") : null);
+    };
 
-    return getSafeRedirect(value, "");
+    const timeoutId = window.setTimeout(syncQueryState, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isLoading) return;
-    setErrorMessage("");
+    setErrorMessage(null);
 
     if (!email || !password) {
       setErrorMessage("Please enter your email and password.");
@@ -81,7 +78,7 @@ export function LoginForm() {
   }
 
   function clearError() {
-    if (errorMessage) setErrorMessage("");
+    if (errorMessage) setErrorMessage(null);
   }
 
   return (

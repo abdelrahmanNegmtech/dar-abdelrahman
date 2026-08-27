@@ -20,7 +20,7 @@ type PropertyHeaderProps = {
 
 export function PropertyHeader({ property }: PropertyHeaderProps) {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(property.slug);
+  const saved = isFavorite(property.id);
   const { closeShare, open, openShare, state, triggerRef } = useShareModal();
 
   return (
@@ -56,7 +56,7 @@ export function PropertyHeader({ property }: PropertyHeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-[13px] font-bold shadow-[0_8px_20px_rgba(15,23,42,0.04)]" onClick={() => toggleFavorite(property.slug)} type="button">
+          <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-[13px] font-bold shadow-[0_8px_20px_rgba(15,23,42,0.04)]" onClick={() => void toggleFavorite(property.id)} type="button">
             <HeartIcon className={`size-5 ${saved ? "fill-[#5A30E8] text-[#5A30E8]" : ""}`} />
             {saved ? "Saved" : "Save"}
           </button>

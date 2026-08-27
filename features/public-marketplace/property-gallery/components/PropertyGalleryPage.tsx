@@ -26,7 +26,7 @@ export function PropertyGalleryPage({ property }: PropertyGalleryPageProps) {
   const [modal, setModal] = useState<"zoom" | "report" | "reserve" | null>(null);
   const { closeShare, open, openShare, state, triggerRef } = useShareModal();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(property.slug);
+  const saved = isFavorite(property.id);
 
   const visiblePhotos = useMemo(
     () =>
@@ -75,7 +75,7 @@ export function PropertyGalleryPage({ property }: PropertyGalleryPageProps) {
         onSlideshow={() => setSlideshow((current) => !current)}
         saved={saved}
         slideshow={slideshow}
-        onSave={() => toggleFavorite(property.slug)}
+        onSave={() => void toggleFavorite(property.id)}
         property={property}
       />
       <div className="mx-auto max-w-[1760px] px-4 pb-8 pt-5 sm:px-7 lg:px-8 lg:pt-[92px]">

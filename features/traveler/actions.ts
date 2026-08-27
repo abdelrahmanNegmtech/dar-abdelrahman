@@ -144,7 +144,15 @@ export async function logoutTraveler() {
   redirect("/login");
 }
 
-export async function toggleSavedProperty(propertyId: string): Promise<ActionResult> {
+function revalidateSavedPropertyRoutes() {
+  revalidatePath("/");
+  revalidatePath("/favorites");
+  revalidatePath("/search");
+  revalidatePath("/traveler/dashboard");
+  revalidatePath("/traveler/saved");
+}
+
+export async function setSavedProperty(propertyId: string, shouldSave: boolean): Promise<ActionResult> {
   if (!propertyId) {
     return fail("Missing property.");
   }
@@ -156,14 +164,22 @@ export async function toggleSavedProperty(propertyId: string): Promise<ActionRes
   }
 
   if (supabase) {
-    const { data: existing } = await supabase
-      .from("saved_properties")
-      .select("property_id")
-      .eq("traveler_id", user.id)
-      .eq("property_id", propertyId)
-      .maybeSingle();
+    if (shouldSave) {
+      const { error } = await supabase
+        .from("saved_properties")
+        .upsert(
+          {
+            property_id: propertyId,
+            traveler_id: user.id,
+          },
+          {
+            ignoreDuplicates: true,
+            onConflict: "traveler_id,property_id",
+          },
+        );
 
-    if (existing) {
+      if (error) return fail(error.message);
+    } else {
       const { error } = await supabase
         .from("saved_properties")
         .delete()
@@ -171,19 +187,41 @@ export async function toggleSavedProperty(propertyId: string): Promise<ActionRes
         .eq("property_id", propertyId);
 
       if (error) return fail(error.message);
-    } else {
-      const { error } = await supabase.from("saved_properties").insert({
-        property_id: propertyId,
-        traveler_id: user.id,
-      });
-
-      if (error) return fail(error.message);
     }
   }
 
-  revalidatePath("/traveler/saved");
-  revalidatePath("/traveler/dashboard");
+  revalidateSavedPropertyRoutes();
   return ok("Saved properties updated.");
+}
+
+export async function toggleSavedProperty(propertyId: string): Promise<ActionResult> {
+  if (!propertyId) {
+    return fail("Missing property.");
+  }
+
+  const { supabase, user } = await getAuthedClient();
+
+  if (!user) {
+    return fail("Please sign in to manage saved properties.");
+  }
+
+  if (!supabase) {
+    revalidateSavedPropertyRoutes();
+    return ok("Saved properties updated.");
+  }
+
+  const { data: existing, error } = await supabase
+    .from("saved_properties")
+    .select("property_id")
+    .eq("traveler_id", user.id)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  if (error) {
+    return fail(error.message);
+  }
+
+  return setSavedProperty(propertyId, !existing);
 }
 
 export async function cancelBooking(input: unknown): Promise<ActionResult> {

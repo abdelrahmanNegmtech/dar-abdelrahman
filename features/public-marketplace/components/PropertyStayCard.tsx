@@ -7,6 +7,7 @@ import { HeartIcon, StarIcon } from "@/components/ui";
 import { useFavorites } from "../favorites/useFavorites";
 
 type PropertyStayCardProps = {
+  id: string;
   imagePosition: string;
   imageSrc: string;
   location: string;
@@ -17,6 +18,7 @@ type PropertyStayCardProps = {
 };
 
 export function PropertyStayCard({
+  id,
   imagePosition,
   imageSrc,
   location,
@@ -27,11 +29,11 @@ export function PropertyStayCard({
 }: PropertyStayCardProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
-  const saved = isFavorite(slug);
+  const saved = isFavorite(id);
 
   function toggleSaved(event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
-    toggleFavorite(slug);
+    void toggleFavorite(id);
   }
 
   return (
