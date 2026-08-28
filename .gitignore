@@ -42,3 +42,6 @@ next-env.d.ts
 .freebuff/
 .agents/
 .codex/
+
+supabase/.temp/
+supabase/.branches/

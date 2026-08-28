@@ -46,17 +46,12 @@ export async function GET(request: NextRequest) {
     country_code?: string;
     country_name?: string;
     dialing_code?: string;
-    email?: string;
     full_name?: string;
     phone?: string;
     updated_at: string;
   } = {
     updated_at: new Date().toISOString(),
   };
-
-  if (userData.user.email) {
-    profilePatch.email = userData.user.email;
-  }
 
   const fullName =
     userData.user.user_metadata?.full_name ??
@@ -105,9 +100,18 @@ export async function GET(request: NextRequest) {
   } else {
     const safeAccountType =
       userData.user.user_metadata?.account_type === "owner" ? "owner" : accountType;
+    const safeEmail =
+      userData.user.email ?? `${userData.user.id.toLowerCase()}@placeholder.local`;
+    const safeFullName =
+      fullName ??
+      userData.user.user_metadata?.display_name ??
+      safeEmail.split("@")[0] ??
+      "Guest";
     const { error: insertError } = await supabase.from("profiles").insert({
       ...profilePatch,
       account_type: safeAccountType,
+      email: safeEmail,
+      full_name: safeFullName,
       id: userData.user.id,
     });
     profileSyncError = insertError;
