@@ -1085,7 +1085,7 @@ function PayoutHistoryTable({
                   <td className="owner-body border-b border-[#e8eaf0] px-2 whitespace-nowrap">
                     {payout.bookingReference ? (
                       <Link
-                        href={payout.bookingId ? `/owner/bookings?booking=${payout.bookingId}` : "/owner/bookings"}
+                        href={payout.bookingId ? `/owner/bookings/request-decision?bookingId=${payout.bookingId}` : "/owner/bookings"}
                         onClick={(event) => event.stopPropagation()}
                         className="text-[#5522d9]"
                       >
