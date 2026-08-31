@@ -17,6 +17,7 @@ const nav = [
   ["Payments", "wallet", ownerRoutes.payouts],
   ["Reviews", "star", ownerRoutes.reviews],
   ["Verification", "shield", ownerRoutes.verification],
+  ["Help Center", "headset", ownerRoutes.help],
   ["Settings", "gear", ownerRoutes.settings],
 ] as const;
 
