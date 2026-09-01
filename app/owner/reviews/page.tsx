@@ -2,7 +2,6 @@ import Link from "next/link";
 import { MessageSquareQuote, Star } from "lucide-react";
 import { OwnerShell } from "@/components/owner/owner-shell";
 import { getOwnerReviewsData } from "@/features/reviews/data/review-queries";
-import { ownerRoutes } from "@/lib/owner-routes";
 
 function formatReviewDate(value: string) {
   return new Date(value).toLocaleDateString("en-GB", {
@@ -44,9 +43,9 @@ export default async function OwnerReviewsPage() {
           <p className="mt-2 text-sm font-medium text-slate-500">
             Owner-response persistence remains deferred until a dedicated trusted workflow is introduced.
           </p>
-          <Link className="owner-button-text mt-4 inline-flex rounded-lg border border-violet-600 px-4 py-2 text-violet-700" href={ownerRoutes.publicProfile()}>
-            View public profile
-          </Link>
+          <p className="mt-4 text-sm text-slate-500">
+            Public owner profile linking is unavailable until an authoritative owner profile route is available.
+          </p>
         </div>
 
         {data.reviews.length ? (

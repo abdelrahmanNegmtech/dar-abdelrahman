@@ -13,8 +13,10 @@ export const ownerRoutes = {
   verification: "/owner/verification",
   settings: "/owner/settings",
   help: "/owner/help-center",
-  calendar: (propertyId: string | number = 1) =>
-    `/owner/properties/${propertyId}/calendar-management`,
+  calendar: (propertyId?: string | number) =>
+    propertyId === undefined
+      ? "/owner/properties"
+      : `/owner/properties/${propertyId}/calendar-management`,
   property: (propertyId: string | number = 1) =>
     `/owner/properties/${propertyId}`,
   propertyEdit: (propertyId: string | number = 1, tab = "basic") =>
@@ -29,7 +31,6 @@ export const ownerRoutes = {
     `/owner/properties/${propertyId}/availability-rules`,
   seasonalPricing: (propertyId: string | number = 1) =>
     `/owner/properties/${propertyId}/seasonal-pricing`,
-  publicProfile: (slug = "ahmed-hassan") => `/owners/${slug}`,
 } as const;
 
 const ownerNavRoutes: Record<string, string> = {
