@@ -10,6 +10,19 @@ type PropertyGalleryProps = {
 export function PropertyGallery({ property }: PropertyGalleryProps) {
   const galleryImages = property.galleryPhotos;
 
+  if (!galleryImages.length) {
+    return (
+      <section className="grid h-[290px] place-items-center rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-6 text-center md:h-[315px]">
+        <div>
+          <h2 className="text-lg font-bold text-[#0F172A]">Photos are not available yet</h2>
+          <p className="mt-2 max-w-md text-sm leading-6 text-[#64748B]">
+            This published listing does not currently have public photo metadata available.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="overflow-hidden rounded-xl">
       <div className="hidden h-[315px] grid-cols-[1.1fr_0.9fr] gap-3 md:grid xl:h-[335px]">

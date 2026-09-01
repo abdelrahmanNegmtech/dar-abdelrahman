@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import {
-  buildSearchFallbackResult,
+  createEmptyPublicPropertyResult,
   getPublicProperties,
   parsePublicPropertyFilters,
 } from "@/features/properties/data/public-property-queries";
@@ -15,15 +15,15 @@ type SearchPageProps = {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const resolvedSearchParams = await searchParams;
   const filters = parsePublicPropertyFilters(resolvedSearchParams);
-  const searchData = !getSupabaseConfig()
-    ? buildSearchFallbackResult()
-    : await getPublicProperties(filters).catch(() => null);
+  const searchData = getSupabaseConfig()
+    ? await getPublicProperties(filters).catch(() => null)
+    : null;
 
   return (
     <Suspense fallback={null}>
       <FavoritesBoundary>
         <SearchExperience
-          initialResults={searchData ?? buildSearchFallbackResult()}
+          initialResults={searchData ?? createEmptyPublicPropertyResult()}
           loadFailed={searchData === null}
         />
       </FavoritesBoundary>

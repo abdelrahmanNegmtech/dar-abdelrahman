@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
 import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
-import { HeartIcon, ShieldIcon, StarIcon } from "../../search/icons";
+import { HeartIcon, StarIcon } from "../../search/icons";
 import { useFavorites } from "../useFavorites";
 
 type AuthState = "logged-out" | "logged-in";
@@ -64,17 +64,11 @@ export function FavoritesPage({
                   key={property.slug}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">
-                    <Image
-                      alt={property.title}
-                      className={`absolute inset-0 size-full object-cover ${property.imagePosition}`}
-                      fill
-                      sizes="(min-width: 1280px) 28vw, 100vw"
-                      src="/assets/images/backgrounds/Nighttime_photo.jpeg"
-                    />
-                    <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/72 px-2 py-1 text-[11px] font-bold text-white">
-                      <ShieldIcon className="size-3 fill-[#5A30E8]" />
-                      Verified
-                    </span>
+                    {property.imageSrc ? (
+                      <Image alt={property.title} className={`absolute inset-0 size-full object-cover ${property.imagePosition}`} fill sizes="(min-width: 1280px) 28vw, 100vw" src={property.imageSrc} />
+                    ) : (
+                      <div className="grid size-full place-items-center bg-[#F1F5F9] text-[13px] font-medium text-[#64748B]">Photo unavailable</div>
+                    )}
                   </div>
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -86,10 +80,7 @@ export function FavoritesPage({
                           {property.area}, {property.location}
                         </p>
                       </div>
-                      <span className="inline-flex shrink-0 items-center gap-1 text-[13px] text-[#334155]">
-                        <StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />
-                        {property.rating}
-                      </span>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[13px] text-[#334155]">{property.rating === "No reviews yet" ? property.rating : <><StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />{property.rating}</>}</span>
                     </div>
                     <p className="mt-4 text-[17px] font-bold text-[#0F172A]">
                       {property.price} <span className="font-normal text-[#475569]">/ night</span>

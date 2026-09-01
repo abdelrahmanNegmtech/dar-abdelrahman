@@ -1,47 +1,10 @@
+import Link from "next/link";
 import type { PublicPropertyDetail } from "@/features/properties/data/public-property-queries";
 import { MarketplaceShell } from "../../components/MarketplaceShell";
-import { BookingCard } from "./BookingCard";
-import { HostSummaryBar } from "./HostSummaryBar";
-import { LocationSection } from "./LocationSection";
-import { MobileBookingBar } from "./MobileBookingBar";
 import { PropertyGallery } from "./PropertyGallery";
-import { PropertyHeader } from "./PropertyHeader";
-import { PropertyInfoCards } from "./PropertyInfoCards";
-import { ReviewsSection } from "./ReviewsSection";
-import { SimilarStaysSection } from "./SimilarStaysSection";
 
-type PropertyDetailsPageProps = {
-  property: PublicPropertyDetail;
-};
+type PropertyDetailsPageProps = { property: PublicPropertyDetail };
 
 export function PropertyDetailsPage({ property }: PropertyDetailsPageProps) {
-  return (
-    <MarketplaceShell>
-      <div className="mx-auto max-w-[1760px] px-5 py-5 sm:px-8 lg:px-11">
-        <PropertyHeader property={property} />
-
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px]">
-          <div className="min-w-0">
-            <PropertyGallery property={property} />
-            <HostSummaryBar property={property} />
-            <PropertyInfoCards property={property} />
-            <ReviewsSection property={property} />
-            <LocationSection property={property} />
-          </div>
-
-          <aside className="hidden lg:block">
-            <BookingCard property={property} />
-            <SimilarStaysSection property={property} />
-          </aside>
-        </div>
-
-        <div className="mt-8 lg:hidden">
-          <BookingCard compact property={property} />
-          <SimilarStaysSection mobile property={property} />
-        </div>
-      </div>
-
-      <MobileBookingBar property={property} />
-    </MarketplaceShell>
-  );
+  return <MarketplaceShell><main className="mx-auto max-w-[1440px] px-5 py-6 sm:px-8 lg:px-11"><nav className="mb-4 text-[13px] text-[#64748B]"><Link href="/">Home</Link> / <Link href={`/search?destination=${encodeURIComponent(property.city)}`}>{property.city}</Link> / {property.title}</nav><h1 className="text-[30px] font-bold text-[#0F172A]">{property.title}</h1><p className="mt-2 text-[15px] text-[#475569]">{property.locationLabel}, {property.countryName}</p>{property.reviewsCount ? <p className="mt-2 text-[14px] font-semibold">{property.rating.toFixed(1)} from {property.reviewsCount} public reviews</p> : <p className="mt-2 text-[14px] text-[#64748B]">No public reviews yet</p>}<div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]"><div><PropertyGallery property={property} /><section className="mt-7 rounded-xl border border-[#E5E7EB] bg-white p-6"><h2 className="text-[20px] font-bold">About this stay</h2><p className="mt-3 whitespace-pre-line text-[15px] leading-7 text-[#475569]">{property.about}</p></section><section className="mt-5 rounded-xl border border-[#E5E7EB] bg-white p-6"><h2 className="text-[20px] font-bold">Property details</h2><dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">{property.facts.filter((fact) => fact.value !== "N/A").map((fact) => <div key={fact.label}><dt className="text-[13px] text-[#64748B]">{fact.label}</dt><dd className="mt-1 font-semibold">{fact.value}</dd></div>)}</dl></section>{property.reviews.length ? <section className="mt-5 rounded-xl border border-[#E5E7EB] bg-white p-6"><h2 className="text-[20px] font-bold">Guest reviews</h2><div className="mt-4 space-y-4">{property.reviews.map((review) => <article className="border-t border-[#E5E7EB] pt-4 first:border-t-0 first:pt-0" key={`${review.author}-${review.date}`}><p className="font-semibold">{review.author} · {review.rating.toFixed(1)}</p><p className="text-[13px] text-[#64748B]">{review.date}</p>{review.body ? <p className="mt-2 text-[14px] leading-6 text-[#475569]">{review.body}</p> : null}</article>)}</div></section> : null}</div><aside className="h-fit rounded-xl border border-[#E5E7EB] bg-white p-6"><p className="text-[22px] font-bold">{property.priceLabel} <span className="text-[14px] font-normal text-[#64748B]">/ night</span></p><p className="mt-4 text-[14px] leading-6 text-[#64748B]">Booking is not available from the public marketplace yet. Prices and availability are confirmed during the supported booking flow.</p></aside></div></main></MarketplaceShell>;
 }

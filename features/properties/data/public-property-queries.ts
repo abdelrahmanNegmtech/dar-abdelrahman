@@ -1,22 +1,12 @@
 import "server-only";
 
 import { unstable_noStore as noStore } from "next/cache";
-import { marketplaceImages } from "@/features/public-marketplace/assets";
-import { properties as mockSearchProperties, type SearchProperty } from "@/features/public-marketplace/search/data";
 import { createClient } from "@/lib/supabase/server";
 import type {
   PropertyRow,
   ReviewRow,
   TableRow,
 } from "@/lib/supabase/database";
-import {
-  buildFallbackAbout,
-  buildFallbackReviewAuthor,
-  buildFallbackReviewDate,
-  getFallbackGalleryCategories,
-  getFallbackPhotoCountLabel,
-  getPropertyFallbackPreset,
-} from "./public-property-fallbacks";
 
 type AvailabilityRow = Pick<
   TableRow<"property_availability">,
@@ -44,8 +34,16 @@ type PublicPropertyRow = Pick<
   | "minimum_nights"
   | "maximum_nights"
   | "instant_book_enabled"
+  | "latitude"
+  | "longitude"
+  | "location_precision"
   | "created_at"
   | "published_at"
+>;
+
+type PublicPropertyPhotoRow = Pick<
+  TableRow<"property_photos">,
+  "caption" | "is_cover" | "photo_category" | "property_id" | "sort_order" | "storage_path"
 >;
 
 type PublicReviewRow = Pick<
@@ -68,6 +66,7 @@ export type SearchSort = "newest" | "price_asc" | "price_desc";
 
 export type PublicPropertyFilters = {
   bathrooms?: number | null;
+  beds?: number | null;
   bedrooms?: number | null;
   checkIn?: string | null;
   checkOut?: string | null;
@@ -81,10 +80,23 @@ export type PublicPropertyFilters = {
   sort?: SearchSort;
 };
 
-export type PublicPropertyCard = Omit<SearchProperty, "id"> & {
+export type PublicPropertyCard = {
+  area: string;
+  description: string;
   id: string;
+  imagePosition: string;
+  imageSrc: string;
   instantBookEnabled: boolean;
+  lat: number | null;
+  lng: number | null;
+  location: string;
+  photos: string;
+  price: string;
   propertyTypeLabel: string;
+  rating: string;
+  slug: string;
+  tags: string[];
+  title: string;
 };
 
 export type PublicPropertyGalleryPhoto = {
@@ -111,7 +123,7 @@ export type PublicPropertyDetail = {
   breadcrumbLabel: string;
   city: string;
   cleaningFeeAmount: number;
-  coordinates: { lat: number; lng: number };
+  coordinates: { lat: number; lng: number } | null;
   countryName: string;
   currencyCode: string;
   facts: Array<{ label: string; value: string }>;
@@ -160,11 +172,6 @@ export type PublicPropertyListResult = {
 };
 
 const PAGE_SIZE = 6;
-const DEFAULT_COORDINATES = { lat: 30.0911, lng: 31.6366 };
-const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
-  Cairo: { lat: 30.064498, lng: 31.491318 },
-  "Ain Sokhna": { lat: 29.591122, lng: 32.326775 },
-};
 
 function clampPage(page: number | undefined) {
   if (!page || Number.isNaN(page) || page < 1) {
@@ -218,46 +225,85 @@ function buildRatingString(rating: number, reviewsCount: number) {
   return `${rating.toFixed(1)} (${reviewsCount})`;
 }
 
-function sanitizeCoordinates(row: PublicPropertyRow) {
-  return CITY_COORDINATES[row.city] ?? DEFAULT_COORDINATES;
-}
-
 function buildLocationLabel(row: PublicPropertyRow) {
   const area = row.area?.trim();
   return area ? `${area}, ${row.city}` : row.city;
 }
 
-function buildFallbackSearchCard(
-  row: PublicPropertyRow,
-  reviewsByPropertyId: Map<string, PublicReviewRow[]>,
-): PublicPropertyCard {
-  const preset = getPropertyFallbackPreset(row.public_slug);
-  const reviewRows = reviewsByPropertyId.get(row.id) ?? [];
-  const averageRating = getAverageRating(reviewRows);
+function isPublicImageUrl(storagePath: string) {
+  return storagePath.startsWith("https://") || storagePath.startsWith("http://") || storagePath.startsWith("/");
+}
+
+function mapPublicPhoto(row: PublicPropertyPhotoRow): PublicPropertyGalleryPhoto | null {
+  if (!isPublicImageUrl(row.storage_path)) return null;
 
   return {
-    area: row.area ?? preset.areaLabel,
+    category: row.photo_category,
+    label: row.caption?.trim() || "Property photo",
+    position: "object-center",
+    src: row.storage_path,
+    verified: false,
+  };
+}
+
+async function getPublicPhotosByPropertyIds(propertyIds: string[]) {
+  if (!propertyIds.length) return new Map<string, PublicPropertyGalleryPhoto[]>();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("property_photos")
+    .select("caption, is_cover, photo_category, property_id, sort_order, storage_path")
+    .in("property_id", propertyIds)
+    .is("deleted_at", null)
+    .order("is_cover", { ascending: false })
+    .order("sort_order", { ascending: true });
+
+  if (error) throw new Error("Unable to load public property photos.");
+
+  const grouped = new Map<string, PublicPropertyGalleryPhoto[]>();
+  for (const row of (data ?? []) as PublicPropertyPhotoRow[]) {
+    const photo = mapPublicPhoto(row);
+    if (!photo) continue;
+    const current = grouped.get(row.property_id) ?? [];
+    current.push(photo);
+    grouped.set(row.property_id, current);
+  }
+
+  return grouped;
+}
+
+function buildPublicSearchCard(
+  row: PublicPropertyRow,
+  reviewsByPropertyId: Map<string, PublicReviewRow[]>,
+  photosByPropertyId: Map<string, PublicPropertyGalleryPhoto[]>,
+): PublicPropertyCard {
+  const reviewRows = reviewsByPropertyId.get(row.id) ?? [];
+  const averageRating = getAverageRating(reviewRows);
+  const photos = photosByPropertyId.get(row.id) ?? [];
+
+  return {
+    area: row.area ?? "",
     description: row.description ?? `${row.title} in ${buildLocationLabel(row)}.`,
     id: row.id,
-    imagePosition: preset.gallery[0]?.position ?? "object-center",
-    imageSrc: preset.gallery[0]?.src ?? marketplaceImages.modernApartment,
+    imagePosition: "object-center",
+    imageSrc: photos[0]?.src ?? "",
     instantBookEnabled: row.instant_book_enabled,
-    lat: sanitizeCoordinates(row).lat,
-    lng: sanitizeCoordinates(row).lng,
+    lat: row.latitude,
+    lng: row.longitude,
     location: row.city,
-    photos: getFallbackPhotoCountLabel(row.public_slug),
+    photos: photos.length ? `${photos.length} ${photos.length === 1 ? "photo" : "photos"}` : "Photos unavailable",
     price: formatCurrency(row.base_nightly_amount, row.currency_code),
     propertyTypeLabel: mapPropertyTypeLabel(row.property_type),
-    rating: buildRatingString(averageRating, reviewRows.length),
+    rating: reviewRows.length ? buildRatingString(averageRating, reviewRows.length) : "No reviews yet",
     slug: row.public_slug,
-    tags: preset.tags,
+    tags: [mapPropertyTypeLabel(row.property_type), ...(row.instant_book_enabled ? ["Instant book"] : [])],
     title: row.title,
   };
 }
 
 function getAverageRating(reviewRows: PublicReviewRow[]) {
   if (!reviewRows.length) {
-    return 4.9;
+    return 0;
   }
 
   const total = reviewRows.reduce((sum, review) => sum + review.rating, 0);
@@ -279,7 +325,7 @@ function buildRatingBreakdown(reviewRows: PublicReviewRow[]): Array<[string, str
       .filter((value): value is number => typeof value === "number");
     const average = values.length
       ? values.reduce((sum, value) => sum + value, 0) / values.length
-      : 4.8;
+      : 0;
     const rounded = Number(average.toFixed(1));
     const width = Math.max(40, Math.min(100, Math.round((rounded / 5) * 100)));
 
@@ -289,9 +335,11 @@ function buildRatingBreakdown(reviewRows: PublicReviewRow[]): Array<[string, str
 
 function mapReviewRows(reviewRows: PublicReviewRow[]): PublicPropertyReview[] {
   return reviewRows.map((review, index) => ({
-    author: buildFallbackReviewAuthor(index),
+    author: `Guest ${index + 1}`,
     body: review.comment?.trim() || "Verified guest feedback is available for this stay.",
-    date: buildFallbackReviewDate(review),
+    date: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
+      new Date(review.submitted_at ?? review.created_at),
+    ),
     rating: review.rating,
   }));
 }
@@ -365,13 +413,8 @@ async function getAvailabilityByPropertyId(propertyId: string) {
 }
 
 function getUnsupportedFilters(filters: PublicPropertyFilters) {
-  const unsupported: string[] = [];
-
-  if (filters.bathrooms) {
-    unsupported.push("bathrooms");
-  }
-
-  return unsupported;
+  void filters;
+  return [] as string[];
 }
 
 export async function getPublicProperties(filters: PublicPropertyFilters = {}): Promise<PublicPropertyListResult> {
@@ -386,9 +429,14 @@ export async function getPublicProperties(filters: PublicPropertyFilters = {}): 
   let query = supabase
     .from("properties")
     .select(
-      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, latitude, longitude, location_precision, created_at, published_at",
       { count: "exact" },
     );
+
+  // Public discovery must never rely solely on RLS for publication visibility.
+  query = query
+    .eq("moderation_status", "approved")
+    .eq("publication_status", "published");
 
   if (filters.destination?.trim()) {
     const value = filters.destination.trim();
@@ -405,6 +453,10 @@ export async function getPublicProperties(filters: PublicPropertyFilters = {}): 
 
   if (filters.bedrooms) {
     query = query.gte("bedrooms_count", filters.bedrooms);
+  }
+
+  if (filters.beds) {
+    query = query.gte("beds_count", filters.beds);
   }
 
   if (filters.bathrooms) {
@@ -444,10 +496,13 @@ export async function getPublicProperties(filters: PublicPropertyFilters = {}): 
   }
 
   const rows = (data ?? []) as PublicPropertyRow[];
-  const reviewsByPropertyId = await getPublicReviewsByPropertyIds(rows.map((row) => row.id));
+  const [reviewsByPropertyId, photosByPropertyId] = await Promise.all([
+    getPublicReviewsByPropertyIds(rows.map((row) => row.id)),
+    getPublicPhotosByPropertyIds(rows.map((row) => row.id)),
+  ]);
 
   return {
-    items: rows.map((row) => buildFallbackSearchCard(row, reviewsByPropertyId)),
+    items: rows.map((row) => buildPublicSearchCard(row, reviewsByPropertyId, photosByPropertyId)),
     page,
     pageCount: Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE)),
     pageSize: PAGE_SIZE,
@@ -473,17 +528,22 @@ export async function getPublicPropertyCardsByIds(propertyIds: string[]) {
   const { data, error } = await supabase
     .from("properties")
     .select(
-      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, latitude, longitude, location_precision, created_at, published_at",
     )
-    .in("id", propertyIds);
+    .in("id", propertyIds)
+    .eq("moderation_status", "approved")
+    .eq("publication_status", "published");
 
   if (error) {
     throw new Error("Unable to load selected public properties.");
   }
 
   const rows = (data ?? []) as PublicPropertyRow[];
-  const reviewsByPropertyId = await getPublicReviewsByPropertyIds(rows.map((row) => row.id));
-  const cards = rows.map((row) => buildFallbackSearchCard(row, reviewsByPropertyId));
+  const [reviewsByPropertyId, photosByPropertyId] = await Promise.all([
+    getPublicReviewsByPropertyIds(rows.map((row) => row.id)),
+    getPublicPhotosByPropertyIds(rows.map((row) => row.id)),
+  ]);
+  const cards = rows.map((row) => buildPublicSearchCard(row, reviewsByPropertyId, photosByPropertyId));
   const order = new Map(propertyIds.map((propertyId, index) => [propertyId, index]));
 
   return cards.sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
@@ -496,9 +556,11 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
   const { data, error } = await supabase
     .from("properties")
     .select(
-      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, created_at, published_at",
+      "id, public_slug, property_type, title, description, city, area, country_name, max_guests, bedrooms_count, beds_count, bathrooms_count, area_size_sqm, base_nightly_amount, cleaning_fee_amount, currency_code, minimum_nights, maximum_nights, instant_book_enabled, latitude, longitude, location_precision, created_at, published_at",
     )
     .eq("public_slug", slug)
+    .eq("moderation_status", "approved")
+    .eq("publication_status", "published")
     .maybeSingle();
 
   if (error) {
@@ -510,31 +572,18 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
   }
 
   const row = data as PublicPropertyRow;
-  const [availabilityRows, reviewsByPropertyId, searchResult] = await Promise.all([
+  const [availabilityRows, reviewsByPropertyId, photosByPropertyId] = await Promise.all([
     getAvailabilityByPropertyId(row.id),
     getPublicReviewsByPropertyIds([row.id]),
-    getPublicProperties({ page: 1, sort: "newest" }),
+    getPublicPhotosByPropertyIds([row.id]),
   ]);
 
-  const preset = getPropertyFallbackPreset(row.public_slug);
   const reviewRows = reviewsByPropertyId.get(row.id) ?? [];
   const averageRating = getAverageRating(reviewRows);
-  const coordinates = sanitizeCoordinates(row);
-  const similarStays = searchResult.items
-    .filter((item) => item.slug !== row.public_slug)
-    .slice(0, 3)
-    .map((item) => ({
-      imagePosition: item.imagePosition,
-      imageSrc: item.imageSrc,
-      location: `${item.area}, ${item.location}`,
-      price: `${item.price} / night`,
-      rating: item.rating,
-      slug: item.slug,
-      title: item.title,
-    }));
+  const galleryPhotos = photosByPropertyId.get(row.id) ?? [];
 
   return {
-    about: buildFallbackAbout(row),
+    about: row.description?.trim() || "No public description has been provided for this property.",
     availabilityDates: availabilityRows.map((item) => item.availability_date),
     bathroomsCount: row.bathrooms_count,
     bedroomsCount: row.bedrooms_count,
@@ -542,7 +591,10 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
     breadcrumbLabel: row.area ?? row.city,
     city: row.city,
     cleaningFeeAmount: row.cleaning_fee_amount,
-    coordinates,
+    coordinates:
+      row.latitude !== null && row.longitude !== null
+        ? { lat: row.latitude, lng: row.longitude }
+        : null,
     countryName: row.country_name,
     currencyCode: row.currency_code,
     facts: [
@@ -552,18 +604,18 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
       { label: row.bathrooms_count === 1 ? "Bathroom" : "Bathrooms", value: String(row.bathrooms_count) },
       { label: "Size", value: row.area_size_sqm ? `${row.area_size_sqm} m²` : "N/A" },
     ],
-    galleryCategories: getFallbackGalleryCategories(),
-    galleryPhotos: preset.gallery.map((photo) => ({ ...photo, verified: true })),
-    highlights: preset.highlights,
+    galleryCategories: Array.from(new Set(galleryPhotos.map((photo) => photo.category))),
+    galleryPhotos,
+    highlights: [],
     id: row.id,
     instantBookEnabled: row.instant_book_enabled,
-    isUsingFallbackImages: true,
+    isUsingFallbackImages: false,
     locationLabel: buildLocationLabel(row),
-    locationPrecisionLabel: "Approximate area pin shown",
+    locationPrecisionLabel: "Location is shown at city or area level.",
     maxGuests: row.max_guests,
     maximumNights: row.maximum_nights,
     minimumNights: row.minimum_nights,
-    photoCountLabel: getFallbackPhotoCountLabel(row.public_slug),
+    photoCountLabel: galleryPhotos.length ? `${galleryPhotos.length} public photos` : "Photos unavailable",
     priceLabel: formatCurrency(row.base_nightly_amount, row.currency_code),
     pricePerNight: Math.round(row.base_nightly_amount / 100),
     propertyTypeLabel: mapPropertyTypeLabel(row.property_type),
@@ -571,10 +623,10 @@ export async function getPublicPropertyBySlug(slug: string): Promise<PublicPrope
     ratingBreakdown: buildRatingBreakdown(reviewRows),
     reviews: mapReviewRows(reviewRows),
     reviewsCount: reviewRows.length,
-    similarStays,
+    similarStays: [],
     slug: row.public_slug,
     subtitle: `${row.area ?? row.city}, ${row.city}, ${row.country_name}`,
-    tags: preset.tags,
+    tags: [mapPropertyTypeLabel(row.property_type), ...(row.instant_book_enabled ? ["Instant book"] : [])],
     title: row.title,
   };
 }
@@ -601,7 +653,7 @@ export async function getPublicPropertyAvailability(
 
 export async function getPublicPropertyPhotoMetadata() {
   noStore();
-  return [];
+  return [] as PublicPropertyGalleryPhoto[];
 }
 
 export function parsePublicPropertyFilters(
@@ -610,6 +662,7 @@ export function parsePublicPropertyFilters(
   const destination = firstValue(searchParams.destination);
   const guests = parseInteger(firstValue(searchParams.guests));
   const bedrooms = parseBedroomValue(firstValue(searchParams.bedrooms));
+  const beds = parseBedroomValue(firstValue(searchParams.beds));
   const bathrooms = parseInteger(firstValue(searchParams.bathrooms));
   const checkIn = firstValue(searchParams.checkIn);
   const checkOut = firstValue(searchParams.checkOut);
@@ -622,6 +675,7 @@ export function parsePublicPropertyFilters(
 
   return {
     bathrooms,
+    beds,
     bedrooms,
     checkIn,
     checkOut,
@@ -636,19 +690,14 @@ export function parsePublicPropertyFilters(
   };
 }
 
-export function buildSearchFallbackResult(): PublicPropertyListResult {
+export function createEmptyPublicPropertyResult(): PublicPropertyListResult {
   return {
-    items: mockSearchProperties.map((property) => ({
-      ...property,
-      id: String(property.id),
-      instantBookEnabled: property.tags.includes("Instant booking"),
-      propertyTypeLabel: "Property",
-    })),
+    items: [],
     page: 1,
     pageCount: 1,
     pageSize: PAGE_SIZE,
     sort: "newest",
-    totalCount: mockSearchProperties.length,
+    totalCount: 0,
     unsupportedFilters: [],
   };
 }

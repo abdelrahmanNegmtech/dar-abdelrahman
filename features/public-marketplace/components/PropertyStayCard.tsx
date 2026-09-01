@@ -24,7 +24,7 @@ export function PropertyStayCard({
   location,
   price,
   rating,
-  slug = "luxury-studio-in-madinaty",
+  slug,
   title,
 }: PropertyStayCardProps) {
   const router = useRouter();
@@ -42,17 +42,11 @@ export function PropertyStayCard({
       onClick={() => router.push(`/stays/${slug}`)}
     >
       <div className="relative h-[178px] overflow-hidden">
-        <Image
-          alt={title}
-          className={`absolute inset-0 size-full object-cover ${imagePosition}`}
-          fill
-          sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
-          src={imageSrc}
-        />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-[11px] font-bold text-[#0F172A] shadow-[0_8px_18px_rgba(15,23,42,0.16)]">
-          <span className="size-2 rounded-full bg-[#F4B744]" />
-          Superhost
-        </span>
+        {imageSrc ? (
+          <Image alt={title} className={`absolute inset-0 size-full object-cover ${imagePosition}`} fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" src={imageSrc} />
+        ) : (
+          <div className="grid size-full place-items-center bg-[#F1F5F9] text-[13px] font-medium text-[#64748B]">Photo unavailable</div>
+        )}
         <button
           aria-label={`${saved ? "Unsave" : "Save"} ${title}`}
           aria-pressed={saved}
@@ -70,10 +64,7 @@ export function PropertyStayCard({
         </h3>
         <div className="mt-2 flex items-center justify-between gap-3 text-[13px] text-[#64748B]">
           <span>{location}</span>
-          <span className="inline-flex items-center gap-1 text-[#334155]">
-            <StarIcon className="size-3.5 fill-[#F4B744] text-[#F4B744]" />
-            {rating}
-          </span>
+          <span className="inline-flex items-center gap-1 text-[#334155]">{rating === "No reviews yet" ? rating : <><StarIcon className="size-3.5 fill-[#F4B744] text-[#F4B744]" />{rating}</>}</span>
         </div>
         <p className="mt-4 text-[16px] font-bold text-[#0F172A]">{price}</p>
       </div>

@@ -128,6 +128,7 @@ export function MapPanel({ focused = false, properties }: MapPanelProps) {
         const bounds = new googleMaps.LatLngBounds();
 
         properties.forEach((property) => {
+          if (property.lat === null || property.lng === null) return;
           const position = { lat: property.lat, lng: property.lng };
           bounds.extend(position);
           new googleMaps.Marker({ map, position, title: property.title });

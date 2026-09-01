@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MouseEvent } from "react";
 import type { PublicPropertyCard } from "@/features/properties/data/public-property-queries";
 import { useFavorites } from "../../favorites/useFavorites";
-import { HeartIcon, ShieldIcon, StarIcon } from "../icons";
+import { HeartIcon, StarIcon } from "../icons";
 
 type SearchPropertyCardProps = {
   compact?: boolean;
@@ -30,17 +30,11 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
       onClick={() => router.push(`/stays/${property.slug}`)}
     >
       <div className={`relative overflow-hidden ${compact ? "h-full min-h-[168px]" : "aspect-[16/9] min-h-[168px]"}`}>
-        <Image
-          alt={property.title}
-          className={`absolute inset-0 size-full object-cover ${property.imagePosition}`}
-          fill
-          sizes="(min-width: 1280px) 28vw, 100vw"
-          src={property.imageSrc}
-        />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-black/72 px-2 py-1 text-[11px] font-bold text-white">
-          <ShieldIcon className="size-3 fill-[#5A30E8]" />
-          Verified
-        </span>
+        {property.imageSrc ? (
+          <Image alt={property.title} className={`absolute inset-0 size-full object-cover ${property.imagePosition}`} fill sizes="(min-width: 1280px) 28vw, 100vw" src={property.imageSrc} />
+        ) : (
+          <div className="grid size-full place-items-center bg-[#F1F5F9] text-center text-[13px] font-medium text-[#64748B]">Photo unavailable</div>
+        )}
         <button
           aria-label={`${saved ? "Unsave" : "Save"} ${property.title}`}
           aria-pressed={saved}
@@ -66,8 +60,7 @@ export function SearchPropertyCard({ compact = false, property }: SearchProperty
             </p>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 text-[13px] text-[#334155]">
-            <StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />
-            {property.rating}
+            {property.rating === "No reviews yet" ? property.rating : <><StarIcon className="size-4 fill-[#F4B744] text-[#F4B744]" />{property.rating}</>}
           </span>
         </div>
 
