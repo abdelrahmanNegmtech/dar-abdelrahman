@@ -1,13 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { Bell, ChevronDown, Globe2, Search } from "lucide-react";
 
 import { DarLogo } from "@/components/brand/dar-logo";
-import { OwnerProfileLink } from "@/components/owners/owner-profile-link";
+import { getOwnerPreferenceSummary } from "@/components/owner/owner-identity";
+import { useOwnerIdentity } from "@/components/owner/owner-identity-context";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,14 +18,9 @@ import {
 } from "@/components/ui/DropdownMenu";
 import { Button } from "@/features/design-system";
 
-const OWNER_PROFILE = {
-  slug: "ahmed-hassan",
-  name: "Ahmed Hassan",
-  avatarUrl: "/owner-selfie-ahmed-reference.png",
-};
-
 export function OwnerHeader() {
   const router = useRouter();
+  const ownerIdentity = useOwnerIdentity();
   const [query, setQuery] = useState("");
   const [notificationsUnread, setNotificationsUnread] = useState(0);
 
@@ -162,13 +158,15 @@ export function OwnerHeader() {
             leadingIcon={<Globe2 aria-hidden="true" className="size-4" />}
             trailingIcon={<ChevronDown aria-hidden="true" className="size-3" />}
           >
-            English / EGP
+            {getOwnerPreferenceSummary(ownerIdentity)}
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>English / EGP</DropdownMenuItem>
-          <DropdownMenuItem disabled>Arabic / EGP</DropdownMenuItem>
+          <DropdownMenuItem>{getOwnerPreferenceSummary(ownerIdentity)}</DropdownMenuItem>
+          <DropdownMenuItem disabled>
+            Update language and currency in Settings
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -179,23 +177,15 @@ export function OwnerHeader() {
             aria-label="Open owner profile menu"
             className="rounded-full outline-none transition hover:ring-2 hover:ring-brand/20 focus-visible:shadow-[var(--shadow-focus)]"
           >
-            <Image
-              src={OWNER_PROFILE.avatarUrl}
-              alt={OWNER_PROFILE.name}
-              width={36}
-              height={36}
-              className="size-9 rounded-full object-cover"
+            <ProfileAvatar
+              src={ownerIdentity.avatarUrl}
+              name={ownerIdentity.displayName}
+              size={36}
             />
           </button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <OwnerProfileLink owner={OWNER_PROFILE}>
-              View public profile
-            </OwnerProfileLink>
-          </DropdownMenuItem>
-
           <DropdownMenuItem asChild>
             <Link href="/owner/settings">Account settings</Link>
           </DropdownMenuItem>

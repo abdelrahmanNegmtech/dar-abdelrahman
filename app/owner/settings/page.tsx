@@ -1,19 +1,51 @@
-import Link from "next/link";
-import { BadgeCheck, CircleHelp } from "lucide-react";
+import { unstable_noStore as noStore } from "next/cache";
 import { OwnerShell } from "@/components/owner/owner-shell";
+import { getOwnerVerificationPageData } from "@/features/verification/data/owner-verification-queries";
+import { requireOwner } from "@/lib/supabase/auth";
 import { ownerRoutes } from "@/lib/owner-routes";
+import OwnerSettingsPageClient from "./settings-page-client";
+import type { OwnerSettingsPageData } from "./settings-types";
 
-export default function OwnerSettingsPage() {
+export default async function OwnerSettingsPage() {
+  noStore();
+
+  const [{ profile }, verificationData] = await Promise.all([
+    requireOwner(),
+    getOwnerVerificationPageData(),
+  ]);
+
+  const data: OwnerSettingsPageData = {
+    profile: {
+      address: profile.address,
+      avatarUrl: profile.avatar_url,
+      city: profile.city,
+      country: profile.country,
+      countryName: profile.country_name,
+      createdAt: profile.created_at,
+      displayName: profile.display_name,
+      email: profile.email,
+      emailVerified: profile.email_verified,
+      fullName: profile.full_name,
+      identityVerified: profile.identity_verified,
+      phone: profile.phone,
+      phoneVerified: profile.phone_verified,
+      preferredCurrency: profile.preferred_currency,
+      preferredLanguage: profile.preferred_language,
+      updatedAt: profile.updated_at,
+    },
+    verification: {
+      approvedAt: verificationData.verification.approvedAt,
+      href: ownerRoutes.verification,
+      rejectedAt: verificationData.verification.rejectedAt,
+      status: verificationData.verification.status,
+      statusLabel: verificationData.verification.statusLabel,
+      submittedAt: verificationData.verification.submittedAt,
+    },
+  };
+
   return (
     <OwnerShell active="Settings">
-      <div className="owner-dashboard-page">
-        <h1 className="owner-page-title">Settings</h1>
-        <p className="owner-page-description text-slate-500">Manage your owner account and support preferences.</p>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Link href={ownerRoutes.verification} className="rounded-xl border border-slate-200 bg-white p-5 hover:border-violet-300"><BadgeCheck className="h-6 w-6 text-violet-600" /><h2 className="owner-card-title mt-3">Verification</h2></Link>
-          <Link href={ownerRoutes.help} className="rounded-xl border border-slate-200 bg-white p-5 hover:border-violet-300"><CircleHelp className="h-6 w-6 text-violet-600" /><h2 className="owner-card-title mt-3">Help center</h2></Link>
-        </div>
-      </div>
+      <OwnerSettingsPageClient data={data} />
     </OwnerShell>
   );
 }

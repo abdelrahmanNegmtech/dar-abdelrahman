@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -18,18 +17,11 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useOwnerIdentity } from "@/components/owner/owner-identity-context";
 import { DarLogo } from "@/components/brand/dar-logo";
-import { OwnerProfileLink } from "@/components/owners/owner-profile-link";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { Button } from "@/features/design-system";
 import { ownerRoutes } from "@/lib/owner-routes";
-
-const OWNER_PROFILE = {
-  slug: "ahmed-hassan",
-  name: "Ahmed Hassan",
-  avatarUrl: "/owner-selfie-ahmed-reference.png",
-  accountLabel: "Verified Owner",
-  location: "Egypt",
-};
 
 export type OwnerNavigationItem = {
   label: string;
@@ -92,22 +84,31 @@ function NavigationLinks({ propertyId, variant = "dark", onNavigate }: OwnerNavi
 }
 
 export function OwnerDesktopNavigation({ propertyId, variant = "dark" }: OwnerNavigationProps) {
+  const ownerIdentity = useOwnerIdentity();
   void variant;
   return (
     <aside className="sticky top-0 flex h-screen w-[var(--sidebar-width)] shrink-0 flex-col overflow-y-auto border-r border-[var(--sidebar-dark-border)] bg-[var(--sidebar-dark-background)] px-5 pb-6 pt-7 text-[var(--sidebar-dark-foreground)] max-[900px]:hidden">
       <Link aria-label="Go to DAR homepage" className="block w-fit" href="/">
         <DarLogo surface="dark" width={610} height={260} className="h-auto w-[132px] object-contain object-left" priority />
       </Link>
-      <OwnerProfileLink owner={OWNER_PROFILE} className="mt-6 rounded-[var(--radius-md)] border border-[var(--sidebar-dark-border)] p-4 transition-colors hover:border-[var(--brand)] hover:bg-[var(--sidebar-dark-elevated)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] active:bg-[var(--sidebar-dark-elevated)]">
+      <div className="mt-6 rounded-[var(--radius-md)] border border-[var(--sidebar-dark-border)] p-4">
         <div className="flex items-center gap-3">
-          <Image src={OWNER_PROFILE.avatarUrl} alt={OWNER_PROFILE.name} width={46} height={46} className="size-[46px] rounded-full object-cover" />
+          <ProfileAvatar
+            src={ownerIdentity.avatarUrl}
+            name={ownerIdentity.displayName}
+            size={46}
+          />
           <div className="min-w-0">
-            <b className="block truncate text-sm font-semibold text-[var(--sidebar-dark-foreground)]">{OWNER_PROFILE.name}</b>
-            <p className="mt-1 text-xs text-[var(--sidebar-dark-muted)]">{OWNER_PROFILE.accountLabel}</p>
-            <p className="mt-1 truncate text-xs text-[var(--sidebar-dark-muted)]">{OWNER_PROFILE.location}</p>
+            <b className="block truncate text-sm font-semibold text-[var(--sidebar-dark-foreground)]">
+              {ownerIdentity.displayName}
+            </b>
+            <p className="mt-1 text-xs text-[var(--sidebar-dark-muted)]">{ownerIdentity.accountLabel}</p>
+            <p className="mt-1 truncate text-xs text-[var(--sidebar-dark-muted)]">
+              {ownerIdentity.locationLabel ?? "Location not set"}
+            </p>
           </div>
         </div>
-      </OwnerProfileLink>
+      </div>
       <div className="mt-5"><NavigationLinks propertyId={propertyId} variant="dark" /></div>
     </aside>
   );

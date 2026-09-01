@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { DarLogo } from "@/components/brand/dar-logo";
+import { getOwnerPreferenceSummary } from "@/components/owner/owner-identity";
+import { useOwnerIdentity } from "@/components/owner/owner-identity-context";
 import { Icon } from "@/components/host-landing/icons";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { ownerRoutes } from "@/lib/owner-routes";
@@ -23,6 +25,7 @@ const nav = [
 
 export function OwnerShell({ active, children, actions }: { active: string; children: ReactNode; actions?: ReactNode; wide?: boolean; fluid?: boolean }) {
   const [notificationsUnread, setNotificationsUnread] = useState(2);
+  const ownerIdentity = useOwnerIdentity();
 
   useEffect(() => {
     let isActive = true;
@@ -61,8 +64,11 @@ export function OwnerShell({ active, children, actions }: { active: string; chil
           <DarLogo surface="dark" width={610} height={260} className="h-[52px] w-[140px] object-contain object-left" />
           <div className="mt-5 rounded-lg border border-white/15 p-3">
             <div className="flex items-center gap-3">
-              <ProfileAvatar src="/owner-selfie-ahmed-reference.png" name="Ahmed Hassan" size={44}/>
-              <div><b className="owner-card-title">Ahmed Hassan</b><p className="owner-helper text-white/65">Verified Owner</p></div>
+              <ProfileAvatar src={ownerIdentity.avatarUrl} name={ownerIdentity.displayName} size={44}/>
+              <div>
+                <b className="owner-card-title">{ownerIdentity.displayName}</b>
+                <p className="owner-helper text-white/65">{ownerIdentity.accountLabel}</p>
+              </div>
             </div>
           </div>
           <nav className="mt-4 space-y-1">
@@ -90,8 +96,12 @@ export function OwnerShell({ active, children, actions }: { active: string; chil
                   </b>
                 ) : null}
               </span>
-              <span className="owner-label flex items-center gap-2 max-[620px]:hidden"><Icon name="globe" className="size-5" />English / EGP<Icon name="chevron" className="size-3" /></span>
-              <ProfileAvatar src="/owner-selfie-ahmed-reference.png" name="Ahmed Hassan" size={34}/>
+              <span className="owner-label flex items-center gap-2 max-[620px]:hidden">
+                <Icon name="globe" className="size-5" />
+                {getOwnerPreferenceSummary(ownerIdentity)}
+                <Icon name="chevron" className="size-3" />
+              </span>
+              <ProfileAvatar src={ownerIdentity.avatarUrl} name={ownerIdentity.displayName} size={34}/>
             </div>
           </header>
           {actions ? <div className="flex justify-end gap-3 px-7 pt-4">{actions}</div> : null}
